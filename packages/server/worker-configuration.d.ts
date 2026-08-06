@@ -12,6 +12,7 @@ declare namespace Cloudflare {
 		CF_STORAGE_ENABLED: string;
 		DAILY_ROLLUPS: R2Bucket;
 		WEB_COUNTER_AE: AnalyticsEngineDataset;
+		WEB_EVENTS_AE: AnalyticsEngineDataset;
 		ASSETS: Fetcher;
 	}
 }

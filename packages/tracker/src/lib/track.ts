@@ -7,12 +7,59 @@ import {
     getUtmParamsFromBrowserUrl,
     isLocalhostAddress,
 } from "../shared/utils";
+import { getTrackingIdentity } from "./identity";
 import { buildCollectRequestParams } from "../shared/request";
 
 export type TrackPageviewOpts = {
     url?: string;
     referrer?: string;
 };
+
+export type TrackEventOpts = {
+    type: "screenshot" | "copy" | "scrape" | "interaction";
+    name: string;
+    target?: string;
+    value?: string;
+};
+
+function currentContext() {
+    const location = window.location;
+    return {
+        hostname: location.hostname,
+        path: location.pathname + location.search || "/",
+        referrer: getBrowserReferrer(location.hostname, ""),
+    };
+}
+
+export function trackEvent(client: Client, opts: TrackEventOpts) {
+    if (!client.reportOnLocalhost && isLocalhostAddress(window.location.hostname)) return;
+    const context = currentContext();
+    const identity = getTrackingIdentity(client.siteId, false);
+    const params = buildCollectRequestParams(client.siteId, context.hostname, context.path, context.referrer, {}, undefined, identity);
+    params.ev = "1";
+    params.et = opts.type;
+    params.en = opts.name.slice(0, 120);
+    params.tg = (opts.target || context.path).slice(0, 240);
+    if (opts.value) params.val = opts.value.slice(0, 240);
+    makeRequest(client.reporterUrl, params);
+}
+
+export function autoTrackEvents(client: Client) {
+    const onCopy = (event: ClipboardEvent) => {
+        const element = event.target instanceof Element ? event.target.closest<HTMLElement>("[data-counterscale-event-name], code, pre") : null;
+        trackEvent(client, { type: "copy", name: element?.dataset.counterscaleEventName || "Content copied", target: element?.dataset.counterscaleEventTarget || window.location.pathname });
+    };
+    const onClick = (event: MouseEvent) => {
+        const element = event.target instanceof Element ? event.target.closest<HTMLElement>("[data-counterscale-event]") : null;
+        if (!element) return;
+        const type = element.dataset.counterscaleEvent as TrackEventOpts["type"];
+        if (!["screenshot", "copy", "scrape", "interaction"].includes(type)) return;
+        trackEvent(client, { type, name: element.dataset.counterscaleEventName || element.textContent?.trim() || "Interaction", target: element.dataset.counterscaleEventTarget || window.location.pathname, value: element.dataset.counterscaleEventValue });
+    };
+    document.addEventListener("copy", onCopy);
+    document.addEventListener("click", onClick);
+    return () => { document.removeEventListener("copy", onCopy); document.removeEventListener("click", onClick); };
+}
 
 export function autoTrackPageviews(client: Client) {
     const cleanupFn = instrumentHistoryBuiltIns(() => {
@@ -95,12 +142,14 @@ export async function trackPageview(
     const utmParams = getUtmParamsFromBrowserUrl(url);
 
     let hitType: string | undefined;
+    let dailyVisitor = true;
     try {
         const cacheStatus = await checkCacheStatus(
             client.reporterUrl,
             client.siteId,
         );
         hitType = cacheStatus.ht.toString();
+        dailyVisitor = cacheStatus.ht === 1;
     } catch {
         // If cache check fails, we proceed without hit count data
         // The collect endpoint will handle the missing parameters
@@ -113,6 +162,7 @@ export async function trackPageview(
         referrer,
         utmParams,
         hitType,
+        getTrackingIdentity(client.siteId, dailyVisitor),
     );
 
     makeRequest(client.reporterUrl, requestParams);

@@ -1,6 +1,7 @@
-import { ColumnMappingToType, ColumnMappings } from "./schema";
+import { ColumnMappings } from "./schema";
+import type { ColumnMappingToType } from "./schema";
 
-import { SearchFilters } from "~/lib/types";
+import type { SearchFilters } from "~/lib/types";
 
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
@@ -65,6 +66,7 @@ export function intervalToSql(
             break;
         case "1d":
         case "7d":
+        case "14d":
         case "30d":
         case "90d":
             startIntervalSql = `toStartOfInterval(NOW() - INTERVAL '${interval.split("d")[0]}' DAY, INTERVAL '${bucketIntervalMinutes}' MINUTE)`;
@@ -144,6 +146,9 @@ function filtersToSql(filters: SearchFilters) {
         "utmCampaign",
         "utmTerm",
         "utmContent",
+        "region",
+        "city",
+        "operatingSystem",
     ];
 
     let filterStr = "";
@@ -194,6 +199,34 @@ export class AnalyticsEngineAPI {
             body: query,
             headers: this.defaultHeaders,
         });
+    }
+
+    async getEvents(siteId: string, interval: string, tz?: string) {
+        const { startIntervalSql, endIntervalSql } = intervalToSql(interval, tz);
+        const response = await this.query(`
+            SELECT blob1 as host, blob2 as userAgent, blob3 as path, blob4 as country,
+                blob5 as referrer, blob6 as browser, blob7 as deviceModel, blob9 as browserVersion,
+                blob10 as deviceType, blob11 as eventType, blob12 as eventName, blob13 as target,
+                blob14 as value, blob15 as network, blob16 as region, blob17 as city,
+                blob18 as operatingSystem, blob19 as visitorId, blob20 as sessionId,
+                SUM(_sample_interval) as count, MAX(double2) as sessionDepth, MAX(timestamp) as lastSeen
+            FROM eventsDataset
+            WHERE timestamp >= ${startIntervalSql} AND timestamp < ${endIntervalSql}
+                AND blob8 = '${siteId}'
+            GROUP BY host, userAgent, path, country, referrer, browser, deviceModel, browserVersion,
+                deviceType, eventType, eventName, target, value, network, region, city,
+                operatingSystem, visitorId, sessionId
+            ORDER BY lastSeen DESC
+            LIMIT 100`);
+        if (!response.ok) throw new Error(response.statusText);
+        const result = (await response.json()) as AnalyticsQueryResult<{
+            host: string; userAgent: string; path: string; country: string; referrer: string;
+            browser: string; deviceModel: string; browserVersion: string; deviceType: string;
+            eventType: string; eventName: string; target: string; value: string; network: string;
+            region: string; city: string; operatingSystem: string; visitorId: string; sessionId: string;
+            count: number; sessionDepth: number; lastSeen: string;
+        }>;
+        return result.data;
     }
 
     async getViewsGroupedByInterval(
@@ -682,6 +715,27 @@ export class AnalyticsEngineAPI {
         });
     }
 
+    async getCountByHost(
+        siteId: string,
+        interval: string,
+        tz?: string,
+        filters: SearchFilters = {},
+        page: number = 1,
+    ): Promise<[host: string, visitors: number, views: number][]> {
+        const allCountsResult = await this.getAllCountsByColumn(
+            siteId,
+            "host",
+            interval,
+            tz,
+            filters,
+            page,
+        );
+
+        return Object.entries(allCountsResult)
+            .map(([host, counts]) => [host, counts.visitors, counts.views] as [string, number, number])
+            .sort((a, b) => b[1] - a[1]);
+    }
+
     async getCountByCountry(
         siteId: string,
         interval: string,
@@ -697,6 +751,46 @@ export class AnalyticsEngineAPI {
             filters,
             page,
         );
+    }
+
+    async getCountByRegion(
+        siteId: string,
+        interval: string,
+        tz?: string,
+        filters: SearchFilters = {},
+        page: number = 1,
+    ): Promise<[region: string, visitors: number][]> {
+        return this.getVisitorCountByColumn(siteId, "region", interval, tz, filters, page);
+    }
+
+    async getCountByOperatingSystem(
+        siteId: string,
+        interval: string,
+        tz?: string,
+        filters: SearchFilters = {},
+        page: number = 1,
+    ): Promise<[operatingSystem: string, visitors: number][]> {
+        return this.getVisitorCountByColumn(siteId, "operatingSystem", interval, tz, filters, page);
+    }
+
+    async getSessionCount(
+        siteId: string,
+        interval: string,
+        tz?: string,
+        filters: SearchFilters = {},
+    ): Promise<number> {
+        const { startIntervalSql, endIntervalSql } = intervalToSql(interval, tz);
+        const filterStr = filtersToSql(filters);
+        const query = `
+            SELECT SUM(_sample_interval * ${ColumnMappings.newSession}) as sessions
+            FROM metricsDataset
+            WHERE timestamp >= ${startIntervalSql} AND timestamp < ${endIntervalSql}
+                AND ${ColumnMappings.siteId} = '${siteId}'
+                ${filterStr}`;
+        const response = await this.query(query);
+        if (!response.ok) throw new Error(response.statusText);
+        const result = (await response.json()) as AnalyticsQueryResult<{ sessions: number }>;
+        return Number(result.data[0]?.sessions || 0);
     }
 
     async getCountByReferrer(

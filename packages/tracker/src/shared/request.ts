@@ -1,4 +1,4 @@
-import type { CollectRequestParams, UtmParams } from "./types";
+import type { CollectRequestParams, TrackingIdentity, UtmParams } from "./types";
 import { queryParamStringify } from "./utils";
 
 export function buildCollectRequestParams(
@@ -8,6 +8,7 @@ export function buildCollectRequestParams(
     referrer: string,
     utmParams: UtmParams = {},
     hitType?: string,
+    identity?: TrackingIdentity,
 ): CollectRequestParams {
     const params: CollectRequestParams = {
         p: path,
@@ -18,6 +19,15 @@ export function buildCollectRequestParams(
 
     if (hitType) {
         params.ht = hitType;
+    }
+
+    if (identity) {
+        params.dv = identity.dailyVisitor ? "1" : "0";
+        params.sh = String(identity.sessionHits);
+        params.sd = String(identity.sessionDepth);
+        params.ns = identity.newSession ? "1" : "0";
+        if (identity.visitorId) params.vid = identity.visitorId;
+        if (identity.sessionId) params.ssid = identity.sessionId;
     }
 
     Object.assign(params, utmParams);

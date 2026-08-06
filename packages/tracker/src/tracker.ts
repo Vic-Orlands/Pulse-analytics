@@ -13,11 +13,10 @@ function getLegacySiteId(): string | undefined {
     // backwards compatibility layer with legacy API for setting
     // site id using inline script + global variables
     type CommandName = "set" | "trackPageview";
-    type CommandArgs = string[];
-    type Command = [CommandName, ...CommandArgs];
+    type Command = [CommandName, ...string[]];
 
     let siteId = undefined;
-    const queue = (window.counterscale && window.counterscale.q) || [];
+    const queue = ((window.counterscale && window.counterscale.q) || []) as Command[];
     queue.forEach(function (cmd: Command) {
         // only interested in grabbing siteId
         if (cmd[0] === "set" && cmd[1] === "siteId") {
@@ -44,6 +43,12 @@ function init() {
         reportOnLocalhost,
         reporterUrl,
         autoTrackPageviews: true,
+    });
+    window.counterscale = Object.assign(window.counterscale || {}, {
+        init: Counterscale.init,
+        trackPageview: Counterscale.trackPageview,
+        trackEvent: Counterscale.trackEvent,
+        cleanup: Counterscale.cleanup,
     });
 }
 

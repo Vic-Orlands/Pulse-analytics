@@ -29,6 +29,11 @@ export const ColumnMappings = {
     utmCampaign: "blob13",
     utmTerm: "blob14",
     utmContent: "blob15",
+    region: "blob16",
+    city: "blob17",
+    operatingSystem: "blob18",
+    visitorId: "blob19",
+    sessionId: "blob20",
 
     /**
      * doubles

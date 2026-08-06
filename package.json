@@ -1,4 +1,5 @@
 {
+    "name": "pulse-analytics",
     "private": true,
     "scripts": {
         "build": "turbo run build",

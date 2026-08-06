@@ -1,4 +1,4 @@
-import { autoTrackPageviews } from "./track";
+import { autoTrackEvents, autoTrackPageviews } from "./track";
 import type { BaseClientConfig } from "../shared/types";
 
 export type ClientOpts = BaseClientConfig & {
@@ -11,6 +11,7 @@ export class Client {
     reportOnLocalhost = false;
 
     _cleanupAutoTrackPageviews?: () => void;
+    _cleanupAutoTrackEvents?: () => void;
 
     constructor(opts: ClientOpts) {
         this.siteId = opts.siteId;
@@ -26,6 +27,7 @@ export class Client {
             // This helps with testing and avoids issues with async trackPageview
             setTimeout(() => {
                 this._cleanupAutoTrackPageviews = autoTrackPageviews(this);
+                this._cleanupAutoTrackEvents = autoTrackEvents(this);
             }, 0);
         }
     }
@@ -34,5 +36,6 @@ export class Client {
         if (this._cleanupAutoTrackPageviews) {
             this._cleanupAutoTrackPageviews();
         }
+        if (this._cleanupAutoTrackEvents) this._cleanupAutoTrackEvents();
     }
 }
