@@ -4,6 +4,11 @@ export type CollectRequestParams = {
     r: string; // referrer
     sid: string; // siteId
     ht?: string; // hit type
+    dv?: string; // daily visitor
+    sh?: string; // session hit count
+    ns?: string; // new session
+    vid?: string; // anonymous visitor id
+    ssid?: string; // session id
     [key: string]: string | undefined; // Allow additional string properties
 } & UtmParams;
 
@@ -28,4 +33,12 @@ export type BaseClientConfig = {
 
 export type CacheResponse = {
     ht: number; // Number of hits in the current session (hit type)
+};
+
+export type TrackingIdentity = {
+    dailyVisitor: boolean;
+    sessionHits: number;
+    newSession: boolean;
+    visitorId?: string;
+    sessionId?: string;
 };

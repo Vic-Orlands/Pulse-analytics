@@ -10,7 +10,10 @@ dist
 .dev.vars
 .turbo
 .react-router
+.svelte-kit
+.playwright-cli
 
 coverage
 playwright-report
 __screenshots__
+packages/server/static/tracker.js

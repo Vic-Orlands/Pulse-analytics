@@ -1,5 +1,6 @@
 import type { AnalyticsEngineDataset } from "@cloudflare/workers-types";
-import { IDevice, UAParser } from "ua-parser-js";
+import { UAParser } from "ua-parser-js";
+import type { IDevice } from "ua-parser-js";
 import { maskBrowserVersion } from "~/lib/utils";
 
 // Cookieless visitor/session tracking
@@ -132,7 +133,7 @@ function getDeviceTypeFromDevice(device: IDevice): string {
 
 export function collectRequestHandler(
     request: Request,
-    env: Env,
+    env: { WEB_COUNTER_AE: AnalyticsEngineDataset },
     extra: Record<string, string> = {}, // extra request properties (i.e. Cloudflare properties)
 ) {
     const params = extractParamsFromQueryString(request.url);
@@ -170,10 +171,12 @@ export function collectRequestHandler(
         nextLastModifiedDate = cacheResult.nextLastModifiedDate;
     }
 
-    isVisit = hits === 1; // if first hit, it is a visit
+    isVisit = params.dv !== undefined ? params.dv === "1" : hits === 1;
+
+    const sessionHits = Math.max(1, Math.min(3, Number.parseInt(params.sh || String(hits), 10) || 1));
 
     // Get bounce value based on hit count
-    bounceValue = getBounceValue(hits);
+    bounceValue = getBounceValue(sessionHits);
 
     const browserVersion = maskBrowserVersion(
         parsedUserAgent.getBrowser().version,
@@ -185,7 +188,7 @@ export function collectRequestHandler(
         path: params.p,
         referrer: params.r,
         newVisitor: isVisit ? 1 : 0,
-        newSession: 0, // dead column
+        newSession: params.ns === "1" ? 1 : 0,
         bounce: bounceValue,
         // user agent stuff
         userAgent: userAgent,
@@ -193,6 +196,9 @@ export function collectRequestHandler(
         browserVersion: browserVersion,
         deviceModel: parsedUserAgent.getDevice().model,
         deviceType: getDeviceTypeFromDevice(parsedUserAgent.getDevice()),
+        operatingSystem: parsedUserAgent.getOS().name,
+        visitorId: params.vid,
+        sessionId: params.ssid,
         // UTM parameters
         utmSource: params.us,
         utmMedium: params.um,
@@ -207,6 +213,10 @@ export function collectRequestHandler(
     if (typeof country === "string") {
         data.country = country;
     }
+    const region = extra?.region;
+    if (typeof region === "string") data.region = region;
+    const city = extra?.city;
+    if (typeof city === "string") data.city = city;
 
     writeDataPoint(env.WEB_COUNTER_AE, data);
 
@@ -258,6 +268,11 @@ interface DataPoint {
     utmCampaign?: string;
     utmTerm?: string;
     utmContent?: string;
+    region?: string;
+    city?: string;
+    operatingSystem?: string;
+    visitorId?: string;
+    sessionId?: string;
 
     // doubles
     newVisitor: number;
@@ -290,6 +305,11 @@ export function writeDataPoint(
             data.utmCampaign || "", // blob13
             data.utmTerm || "", // blob14
             data.utmContent || "", // blob15
+            data.region || "", // blob16
+            data.city || "", // blob17
+            data.operatingSystem || "", // blob18
+            data.visitorId || "", // blob19
+            data.sessionId || "", // blob20
         ],
         doubles: [data.newVisitor || 0, data.newSession || 0, data.bounce],
     };

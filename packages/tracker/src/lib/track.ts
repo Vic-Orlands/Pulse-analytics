@@ -7,6 +7,7 @@ import {
     getUtmParamsFromBrowserUrl,
     isLocalhostAddress,
 } from "../shared/utils";
+import { getTrackingIdentity } from "./identity";
 import { buildCollectRequestParams } from "../shared/request";
 
 export type TrackPageviewOpts = {
@@ -95,12 +96,14 @@ export async function trackPageview(
     const utmParams = getUtmParamsFromBrowserUrl(url);
 
     let hitType: string | undefined;
+    let dailyVisitor = true;
     try {
         const cacheStatus = await checkCacheStatus(
             client.reporterUrl,
             client.siteId,
         );
         hitType = cacheStatus.ht.toString();
+        dailyVisitor = cacheStatus.ht === 1;
     } catch {
         // If cache check fails, we proceed without hit count data
         // The collect endpoint will handle the missing parameters
@@ -113,6 +116,7 @@ export async function trackPageview(
         referrer,
         utmParams,
         hitType,
+        getTrackingIdentity(client.siteId, dailyVisitor),
     );
 
     makeRequest(client.reporterUrl, requestParams);

@@ -1,6 +1,7 @@
-import { ColumnMappingToType, ColumnMappings } from "./schema";
+import { ColumnMappings } from "./schema";
+import type { ColumnMappingToType } from "./schema";
 
-import { SearchFilters } from "~/lib/types";
+import type { SearchFilters } from "~/lib/types";
 
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
@@ -144,6 +145,9 @@ function filtersToSql(filters: SearchFilters) {
         "utmCampaign",
         "utmTerm",
         "utmContent",
+        "region",
+        "city",
+        "operatingSystem",
     ];
 
     let filterStr = "";
@@ -697,6 +701,46 @@ export class AnalyticsEngineAPI {
             filters,
             page,
         );
+    }
+
+    async getCountByRegion(
+        siteId: string,
+        interval: string,
+        tz?: string,
+        filters: SearchFilters = {},
+        page: number = 1,
+    ): Promise<[region: string, visitors: number][]> {
+        return this.getVisitorCountByColumn(siteId, "region", interval, tz, filters, page);
+    }
+
+    async getCountByOperatingSystem(
+        siteId: string,
+        interval: string,
+        tz?: string,
+        filters: SearchFilters = {},
+        page: number = 1,
+    ): Promise<[operatingSystem: string, visitors: number][]> {
+        return this.getVisitorCountByColumn(siteId, "operatingSystem", interval, tz, filters, page);
+    }
+
+    async getSessionCount(
+        siteId: string,
+        interval: string,
+        tz?: string,
+        filters: SearchFilters = {},
+    ): Promise<number> {
+        const { startIntervalSql, endIntervalSql } = intervalToSql(interval, tz);
+        const filterStr = filtersToSql(filters);
+        const query = `
+            SELECT SUM(_sample_interval * ${ColumnMappings.newSession}) as sessions
+            FROM metricsDataset
+            WHERE timestamp >= ${startIntervalSql} AND timestamp < ${endIntervalSql}
+                AND ${ColumnMappings.siteId} = '${siteId}'
+                ${filterStr}`;
+        const response = await this.query(query);
+        if (!response.ok) throw new Error(response.statusText);
+        const result = (await response.json()) as AnalyticsQueryResult<{ sessions: number }>;
+        return Number(result.data[0]?.sessions || 0);
     }
 
     async getCountByReferrer(

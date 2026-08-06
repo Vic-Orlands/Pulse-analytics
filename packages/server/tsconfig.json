@@ -1,23 +1,15 @@
 {
-    "extends": "../../tsconfig.json",
+    "extends": "./.svelte-kit/tsconfig.json",
     "compilerOptions": {
-        "paths": {
-            "~/*": ["./app/*"]
-        },
-        "lib": ["DOM", "DOM.Iterable", "ES2022"],
-        "sourceMap": true,
-        "isolatedModules": true,
-        "esModuleInterop": true,
-        "jsx": "react-jsx",
-        "module": "ESNext",
-        "moduleResolution": "Bundler",
-        "resolveJsonModule": true,
-        "target": "ES2022",
-        "strict": true,
         "allowJs": true,
+        "checkJs": true,
+        "esModuleInterop": true,
         "forceConsistentCasingInFileNames": true,
-        "baseUrl": ".",
-        "noEmit": true,
-        "skipLibCheck": true
+        "resolveJsonModule": true,
+        "skipLibCheck": true,
+        "sourceMap": true,
+        "strict": true,
+        "moduleResolution": "bundler",
+        "types": ["@cloudflare/workers-types", "node", "vite/client"]
     }
 }

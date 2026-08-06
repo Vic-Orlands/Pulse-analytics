@@ -11,6 +11,9 @@ export interface SearchFilters {
     utmCampaign?: string;
     utmTerm?: string;
     utmContent?: string;
+    region?: string;
+    city?: string;
+    operatingSystem?: string;
 }
 
 export interface User {
