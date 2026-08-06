@@ -22,7 +22,9 @@ export const handle: Handle = async ({ event, resolve }) => {
         });
     }
 
-    return resolve(event);
+    const response = await resolve(event);
+    response.headers.set("Cache-Control", "private, no-store");
+    return response;
 };
 
 export { digest };
