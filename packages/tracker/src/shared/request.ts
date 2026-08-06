@@ -24,6 +24,7 @@ export function buildCollectRequestParams(
     if (identity) {
         params.dv = identity.dailyVisitor ? "1" : "0";
         params.sh = String(identity.sessionHits);
+        params.sd = String(identity.sessionDepth);
         params.ns = identity.newSession ? "1" : "0";
         if (identity.visitorId) params.vid = identity.visitorId;
         if (identity.sessionId) params.ssid = identity.sessionId;

@@ -16,4 +16,5 @@ dist
 coverage
 playwright-report
 __screenshots__
+/output/
 packages/server/static/tracker.js

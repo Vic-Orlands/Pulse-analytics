@@ -38,6 +38,7 @@ export type CacheResponse = {
 export type TrackingIdentity = {
     dailyVisitor: boolean;
     sessionHits: number;
+    sessionDepth: number;
     newSession: boolean;
     visitorId?: string;
     sessionId?: string;

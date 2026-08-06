@@ -12,6 +12,10 @@
         {
             "binding": "WEB_COUNTER_AE",
             "dataset": "metricsDataset"
+        },
+        {
+            "binding": "WEB_EVENTS_AE",
+            "dataset": "eventsDataset"
         }
     ],
     "r2_buckets": [
@@ -23,7 +27,6 @@
     ],
     "vars": {
         "PUBLIC_APP_NAME": "Pulse",
-        "PUBLIC_SITE_IDS": "portfolio,sleeksign,pulse",
         "CF_ACCOUNT_ID": "1d53e8feb9f95e33e1fa75ab203357bd"
     },
     "triggers": {

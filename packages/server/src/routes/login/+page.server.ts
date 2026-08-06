@@ -3,7 +3,7 @@ import type { Actions, PageServerLoad } from "./$types";
 import { digest } from "../../hooks.server";
 
 export const load: PageServerLoad = async ({ platform }) => {
-    if (!platform?.env?.DASHBOARD_PASSWORD) throw redirect(303, "/");
+    if (!platform?.env?.DASHBOARD_PASSWORD && !import.meta.env.DEV) throw redirect(303, "/");
     return {};
 };
 

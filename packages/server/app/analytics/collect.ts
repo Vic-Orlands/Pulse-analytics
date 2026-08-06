@@ -133,7 +133,7 @@ function getDeviceTypeFromDevice(device: IDevice): string {
 
 export function collectRequestHandler(
     request: Request,
-    env: { WEB_COUNTER_AE: AnalyticsEngineDataset },
+    env: { WEB_COUNTER_AE: AnalyticsEngineDataset; WEB_EVENTS_AE?: AnalyticsEngineDataset },
     extra: Record<string, string> = {}, // extra request properties (i.e. Cloudflare properties)
 ) {
     const params = extractParamsFromQueryString(request.url);
@@ -218,7 +218,11 @@ export function collectRequestHandler(
     const city = extra?.city;
     if (typeof city === "string") data.city = city;
 
-    writeDataPoint(env.WEB_COUNTER_AE, data);
+    if (params.ev === "1" && env.WEB_EVENTS_AE) {
+        writeEventDataPoint(env.WEB_EVENTS_AE, data, params, maskNetwork(extra.network || ""));
+    } else {
+        writeDataPoint(env.WEB_COUNTER_AE, data);
+    }
 
     // encode 1x1 transparent gif
     const gif = "R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
@@ -278,6 +282,25 @@ interface DataPoint {
     newVisitor: number;
     newSession: number;
     bounce: number;
+}
+
+function maskNetwork(address: string) {
+    if (!address) return "";
+    if (address.includes(".")) return `${address.split(".").slice(0, 3).join(".")}.0/24`;
+    return `${address.split(":").slice(0, 3).join(":")}::/48`;
+}
+
+function writeEventDataPoint(analyticsEngine: AnalyticsEngineDataset, data: DataPoint, params: Record<string, string>, network: string) {
+    analyticsEngine.writeDataPoint({
+        indexes: [data.siteId || ""],
+        blobs: [
+            data.host || "", data.userAgent || "", data.path || "", data.country || "", data.referrer || "",
+            data.browserName || "", data.deviceModel || "", data.siteId || "", data.browserVersion || "", data.deviceType || "",
+            params.et || "interaction", params.en || "Interaction", params.tg || data.path || "", params.val || "", network,
+            data.region || "", data.city || "", data.operatingSystem || "", data.visitorId || "", data.sessionId || "",
+        ],
+        doubles: [1, Number.parseInt(params.sd || params.sh || "1", 10) || 1, 0],
+    });
 }
 
 // NOTE: Cloudflare Analytics Engine has limits on total number of bytes, number of fields, etc.

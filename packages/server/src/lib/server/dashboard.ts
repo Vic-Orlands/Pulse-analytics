@@ -1,8 +1,25 @@
 import dayjs from "dayjs";
 import { AnalyticsEngineAPI } from "~/analytics/query";
-import type { DashboardData, TrafficPoint } from "$lib/types";
+import type { DashboardData } from "$lib/types";
 
-const intervals = new Set(["today", "yesterday", "1d", "7d", "30d", "90d"]);
+const intervals = new Set(["today", "yesterday", "1d", "7d", "14d", "30d", "90d"]);
+
+function normalizeRoutes(rows: DashboardData["pages"]): DashboardData["routes"] {
+    const grouped = new Map<string, [number, number]>();
+
+    for (const [path, visitors, views = visitors] of rows) {
+        const route = (path || "/")
+            .split("?")[0]
+            .split("/")
+            .map((segment) => (/^(\d+|[0-9a-f]{8,}|[A-Za-z0-9_-]{20,})$/i.test(segment) ? ":id" : segment))
+            .join("/");
+        const current = grouped.get(route) ?? [0, 0];
+        grouped.set(route, [current[0] + visitors, current[1] + views]);
+    }
+
+    return Array.from(grouped, ([route, counts]) => [route, counts[0], counts[1]] as [string, number, number])
+        .sort((a, b) => b[1] - a[1]);
+}
 
 function rangeFor(interval: string) {
     const now = dayjs();
@@ -27,59 +44,29 @@ function rangeFor(interval: string) {
     };
 }
 
-function preview(siteId: string, interval: string, sites: string[]): DashboardData {
-    const days = interval === "90d" ? 30 : interval === "30d" ? 30 : 7;
-    const seed = siteId.split("").reduce((total, character) => total + character.charCodeAt(0), 0);
-    const series: TrafficPoint[] = Array.from({ length: days }, (_, index) => {
-        const wave = Math.sin((index + seed) * 0.82) * 18;
-        const views = Math.max(8, Math.round(64 + wave + ((index * 11 + seed) % 27)));
-        return {
-            date: dayjs().subtract(days - index - 1, "day").startOf("day").toDate(),
-            views,
-            visitors: Math.round(views * 0.64),
-        };
-    });
-    const views = series.reduce((sum, point) => sum + point.views, 0);
-    const visitors = series.reduce((sum, point) => sum + point.visitors, 0);
-    const sessions = Math.round(visitors * 1.08);
-    const bounces = Math.round(sessions * 0.38);
-
+function unavailable(siteId: string, interval: string, sites: string[]): DashboardData {
     return {
-        source: "preview",
+        source: "unavailable",
         siteId,
         sites,
         interval,
         generatedAt: new Date().toISOString(),
-        stats: {
-            views,
-            visitors,
-            sessions,
-            bounces,
-            bounceRate: (bounces / sessions) * 100,
-            pagesPerVisit: views / sessions,
-        },
-        series,
-        pages: [["/", 382, 614], ["/works", 174, 241], ["/writings", 123, 198], ["/about", 86, 117]],
-        referrers: [["Google", 241, 316], ["Direct", 196, 283], ["x.com", 72, 94], ["github.com", 51, 68]],
-        countries: [["NG", 292], ["US", 176], ["GB", 74], ["DE", 41]],
-        regions: [["Lagos", 183], ["California", 74], ["England", 61], ["Abuja FCT", 52]],
-        browsers: [["Chrome", 312], ["Safari", 174], ["Firefox", 73], ["Edge", 38]],
-        operatingSystems: [["Windows", 214], ["iOS", 143], ["Android", 127], ["macOS", 96]],
-        devices: [["desktop", 341], ["mobile", 228], ["tablet", 24]],
+        stats: { views: 0, visitors: 0, sessions: 0, bounces: 0, bounceRate: 0, pagesPerVisit: 0, previousVisitors: 0 },
+        series: [], pages: [], routes: [], hostnames: [], referrers: [], countries: [], regions: [], browsers: [], browserVersions: [], operatingSystems: [], devices: [], events: [],
     };
 }
 
 export async function getDashboardData(url: URL, env?: App.Platform["env"]): Promise<DashboardData> {
-    const configuredSites = (env?.PUBLIC_SITE_IDS || "portfolio,sleeksign,pulse")
+    const configuredSites = (env?.PUBLIC_SITE_IDS || "")
         .split(",")
         .map((site) => site.trim())
         .filter(Boolean);
     const requestedInterval = url.searchParams.get("interval") || "7d";
     const interval = intervals.has(requestedInterval) ? requestedInterval : "7d";
-    const requestedSite = url.searchParams.get("site") || configuredSites[0] || "portfolio";
+    const requestedSite = url.searchParams.get("site") || configuredSites[0] || "";
 
     if (!env?.CF_ACCOUNT_ID || !env.CF_BEARER_TOKEN) {
-        return preview(requestedSite, interval, configuredSites);
+        return unavailable(requestedSite, interval, configuredSites);
     }
 
     const api = new AnalyticsEngineAPI(env.CF_ACCOUNT_ID, env.CF_BEARER_TOKEN);
@@ -87,24 +74,34 @@ export async function getDashboardData(url: URL, env?: App.Platform["env"]): Pro
     const sites = Array.from(new Set([...configuredSites, ...discoveredSites.map(([site]) => site)])).filter(Boolean);
     const siteId = sites.includes(requestedSite) ? requestedSite : sites[0] || requestedSite;
     const range = rangeFor(interval);
+    const rangeDuration = range.end.diff(range.start, "millisecond");
+    const previousRange = {
+        start: range.start.subtract(rangeDuration, "millisecond"),
+        end: range.start,
+    };
     const timezone = "Africa/Lagos";
 
-    const [counts, sessionCount, seriesRows, pages, referrers, countries, regions, browsers, operatingSystems, devices] =
+    const [counts, sessionCount, seriesRows, previousSeriesRows, pages, hostnames, referrers, countries, regions, browsers, browserVersions, operatingSystems, devices, eventRows] =
         await Promise.all([
             api.getCounts(siteId, interval, timezone).catch(() => ({ views: 0, visitors: 0, bounces: 0 })),
             api.getSessionCount(siteId, interval, timezone).catch(() => 0),
             api.getViewsGroupedByInterval(siteId, range.type, range.start.toDate(), range.end.toDate(), timezone).catch(() => []),
+            api.getViewsGroupedByInterval(siteId, range.type, previousRange.start.toDate(), previousRange.end.toDate(), timezone).catch(() => []),
             api.getCountByPath(siteId, interval, timezone).catch(() => []),
+            api.getCountByHost(siteId, interval, timezone).catch(() => []),
             api.getCountByReferrer(siteId, interval, timezone).catch(() => []),
             api.getCountByCountry(siteId, interval, timezone).catch(() => []),
             api.getCountByRegion(siteId, interval, timezone).catch(() => []),
             api.getCountByBrowser(siteId, interval, timezone).catch(() => []),
+            api.getCountByBrowserVersion(siteId, interval, timezone).catch(() => []),
             api.getCountByOperatingSystem(siteId, interval, timezone).catch(() => []),
             api.getCountByDeviceType(siteId, interval, timezone).catch(() => []),
+            api.getEvents(siteId, interval, timezone).catch(() => []),
         ]);
 
     const sessions = sessionCount || counts.visitors;
     const bounceRate = sessions > 0 ? Math.max(0, counts.bounces / sessions) * 100 : 0;
+    const previousVisitors = previousSeriesRows.reduce((sum, [, point]) => sum + point.visitors, 0);
 
     return {
         source: "live",
@@ -117,14 +114,57 @@ export async function getDashboardData(url: URL, env?: App.Platform["env"]): Pro
             sessions,
             bounceRate,
             pagesPerVisit: sessions > 0 ? counts.views / sessions : 0,
+            previousVisitors,
         },
-        series: seriesRows.map(([date, point]) => ({ date: new Date(date), ...point })),
+        series: seriesRows.map(([date, point], index) => ({
+            date: new Date(date),
+            ...point,
+            previousViews: previousSeriesRows[index]?.[1].views ?? 0,
+            previousVisitors: previousSeriesRows[index]?.[1].visitors ?? 0,
+        })),
         pages,
+        routes: normalizeRoutes(pages),
+        hostnames,
         referrers,
         countries,
         regions,
         browsers,
+        browserVersions,
         operatingSystems,
         devices,
+        events: eventRows.map((row, index) => {
+            const type = (["screenshot", "copy", "scrape", "interaction"].includes(row.eventType) ? row.eventType : "interaction") as DashboardData["events"][number]["type"];
+            const occurredAt = new Date(row.lastSeen).toISOString();
+            return {
+                id: `SIG-${String(index + 1).padStart(4, "0")}`,
+                type,
+                label: row.eventName || `${type} event`,
+                target: row.target || row.path || "/",
+                count: Number(row.count),
+                change: 0,
+                lastSeen: new Date(row.lastSeen).toLocaleString(),
+                occurredAt,
+                visitor: {
+                    id: row.visitorId,
+                    sessionId: row.sessionId,
+                    network: row.network,
+                    country: row.country,
+                    region: row.region,
+                    city: row.city,
+                    browser: row.browser,
+                    browserVersion: row.browserVersion,
+                    operatingSystem: row.operatingSystem,
+                    deviceType: row.deviceType,
+                    deviceModel: row.deviceModel,
+                    userAgent: row.userAgent,
+                    hostname: row.host,
+                    path: row.path,
+                    referrer: row.referrer,
+                    sessionDepth: Number(row.sessionDepth || 1),
+                    firstSeen: "Current retention window",
+                    lastSeen: new Date(row.lastSeen).toLocaleString(),
+                },
+            };
+        }),
     };
 }

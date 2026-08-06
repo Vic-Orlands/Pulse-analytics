@@ -39,14 +39,15 @@ export function getTrackingIdentity(siteId: string, dailyVisitor: boolean): Trac
     const newSession = !currentSession || now - currentSession.lastSeen > SESSION_TIMEOUT;
     const session: SessionRecord = newSession
         ? { id: randomId(), lastSeen: now, hits: 1 }
-        : { ...currentSession, lastSeen: now, hits: Math.min(3, currentSession.hits + 1) };
+        : { ...currentSession, lastSeen: now, hits: currentSession.hits + 1 };
 
     write(visitorKey, visitorId);
     write(sessionKey, session);
 
     return {
         dailyVisitor,
-        sessionHits: session.hits,
+        sessionHits: Math.min(3, session.hits),
+        sessionDepth: session.hits,
         newSession,
         visitorId,
         sessionId: session.id,

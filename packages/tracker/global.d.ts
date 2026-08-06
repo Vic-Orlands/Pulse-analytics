@@ -1,11 +1,13 @@
-// Use a simpler approach with a comment to explain the type
+import type { ClientOpts } from "./src/lib/client";
+import type { TrackEventOpts, TrackPageviewOpts } from "./src/lib/track";
+
 declare global {
     interface Window {
         counterscale: {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            q?: any[]; // Command queue for legacy API
-            init: (opts: any) => void;
-            trackPageview: (opts?: any) => Promise<void>;
+            q?: unknown[][];
+            init: (opts: ClientOpts) => void;
+            trackPageview: (opts?: TrackPageviewOpts) => void;
+            trackEvent: (opts: TrackEventOpts) => void;
             cleanup: () => void;
         };
     }

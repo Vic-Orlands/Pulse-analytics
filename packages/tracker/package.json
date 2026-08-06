@@ -1,8 +1,8 @@
 {
     "name": "@counterscale/tracker",
     "version": "3.4.1",
-    "descriptrion": "Counterscale tracking library for recording pageviews",
-    "homepage": "https://counterscale.dev",
+    "descriptrion": "Pulse Analytics tracking library for recording pageviews and events",
+    "homepage": "https://github.com/Vic-Orlands/Pulse-analytics",
     "license": "MIT",
     "sideEffects": false,
     "type": "module",

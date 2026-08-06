@@ -1,4 +1,4 @@
-# Pulse Analytics
+# Pulse-analytics
 
 Pulse is a private, multi-site web analytics dashboard built on Cloudflare Workers and Analytics Engine. It is a customized fork of [Counterscale](https://github.com/benvinegar/counterscale).
 
@@ -46,11 +46,11 @@ The deployed Worker serves both the dashboard and tracker. Add this to each site
 ></script>
 ```
 
-Use a stable, unique `data-site-id` per application. Pulse itself uses `pulse`; the current connected applications use `portfolio` and `sleeksign`.
+Use a stable, unique `data-site-id` per application. Connected applications are discovered from live Analytics Engine data.
 
 ## Privacy
 
-Pulse does not collect names, email addresses, form contents, IP addresses, or persistent cross-site identifiers. Anonymous visitor identifiers stay within each site's browser storage.
+Pulse does not collect names, email addresses, form contents, raw IP addresses, or persistent cross-site identifiers. Network information is reduced to `/24` IPv4 or `/48` IPv6 prefixes before storage, and anonymous visitor identifiers stay within each site's browser storage.
 
 ## License
 
