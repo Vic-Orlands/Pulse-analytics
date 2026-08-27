@@ -56,6 +56,23 @@ describe("AnalyticsEngineAPI", () => {
                 },
             );
         });
+
+        test("retries rate-limited requests", async () => {
+            fetch
+                .mockResolvedValueOnce(
+                    new Response("Too Many Requests", {
+                        status: 429,
+                        headers: { "Retry-After": "0" },
+                    }),
+                )
+                .mockResolvedValueOnce(new Response("{}", { status: 200 }));
+
+            const request = api.query("SELECT * FROM metricsDataset");
+            await vi.runAllTimersAsync();
+
+            await expect(request).resolves.toMatchObject({ status: 200 });
+            expect(fetch).toHaveBeenCalledTimes(2);
+        });
     });
 
     describe("getViewsGroupedByInterval", () => {
@@ -433,7 +450,11 @@ describe("AnalyticsEngineAPI", () => {
                 createFetchResponse({
                     data: [
                         { blob5: "", isVisitor: 1, count: 9 },
-                        { blob5: "https://google.com/", isVisitor: 1, count: 4 },
+                        {
+                            blob5: "https://google.com/",
+                            isVisitor: 1,
+                            count: 4,
+                        },
                     ],
                 }),
             );
@@ -519,10 +540,15 @@ describe("AnalyticsEngineAPI", () => {
             const result = await api.getEvents("pulse.dev", "7d");
             const sql = String((fetch as Mock).mock.calls[0][1].body);
             const grouped = sql.match(/GROUP BY ([^\n]+)/i)?.[1] ?? "";
-            const groupedColumns = grouped.split(",").map((column) => column.trim()).filter(Boolean);
+            const groupedColumns = grouped
+                .split(",")
+                .map((column) => column.trim())
+                .filter(Boolean);
 
             expect(groupedColumns).toHaveLength(10);
-            expect(groupedColumns.every((column) => column.startsWith("blob"))).toBe(true);
+            expect(
+                groupedColumns.every((column) => column.startsWith("blob")),
+            ).toBe(true);
             expect(sql).toContain("blob14 as value");
             expect(sql).toContain("blob16 as region");
             expect(sql).toContain("blob10 as deviceType");
@@ -530,7 +556,9 @@ describe("AnalyticsEngineAPI", () => {
             expect(sql).toContain("AND timestamp < NOW()");
             expect(sql).toContain("index1 = 'pulse.dev'");
             expect(sql).toContain("argMax(blob6, timestamp) as browser");
-            expect(sql).toContain("AND blob11 IN ('screenshot', 'copy', 'scrape', 'interaction', 'outbound', 'download')");
+            expect(sql).toContain(
+                "AND blob11 IN ('screenshot', 'copy', 'scrape', 'interaction', 'outbound', 'download')",
+            );
             expect(result[0].value).toBe("npm install pulse");
             expect(result[0].region).toBe("Lagos");
             expect(result[0].deviceType).toBe("desktop");
@@ -540,7 +568,12 @@ describe("AnalyticsEngineAPI", () => {
             fetch.mockResolvedValue(
                 createFetchResponse({
                     data: [
-                        { sessionId: "s1", path: "/", firstSeen: "2026-08-27 10:00:00", hits: 1 },
+                        {
+                            sessionId: "s1",
+                            path: "/",
+                            firstSeen: "2026-08-27 10:00:00",
+                            hits: 1,
+                        },
                     ],
                 }),
             );
@@ -555,7 +588,14 @@ describe("AnalyticsEngineAPI", () => {
         test("loads live visitors from the last five minutes", async () => {
             fetch.mockResolvedValue(
                 createFetchResponse({
-                    data: [{ sessionId: "s1", path: "/docs", country: "NG", lastSeen: "2026-08-27 10:00:00" }],
+                    data: [
+                        {
+                            sessionId: "s1",
+                            path: "/docs",
+                            country: "NG",
+                            lastSeen: "2026-08-27 10:00:00",
+                        },
+                    ],
                 }),
             );
 
@@ -570,7 +610,12 @@ describe("AnalyticsEngineAPI", () => {
                 .mockResolvedValueOnce({
                     ok: false,
                     statusText: "Bad Request",
-                    text: () => Promise.resolve(JSON.stringify({ error: "unknown table eventsDataset" })),
+                    text: () =>
+                        Promise.resolve(
+                            JSON.stringify({
+                                error: "unknown table eventsDataset",
+                            }),
+                        ),
                 })
                 .mockResolvedValueOnce(
                     createFetchResponse({
@@ -596,7 +641,9 @@ describe("AnalyticsEngineAPI", () => {
 
             const result = await api.getEvents("pulse.dev", "7d");
             expect(result[0].value).toBe("hello");
-            expect(String((fetch as Mock).mock.calls[1][1].body)).toContain("FROM metricsDataset");
+            expect(String((fetch as Mock).mock.calls[1][1].body)).toContain(
+                "FROM metricsDataset",
+            );
         });
     });
 
@@ -760,7 +807,9 @@ describe("intervalToSql", () => {
                 "toStartOfInterval(NOW() - INTERVAL '90' DAY, INTERVAL '5' MINUTE)",
             endIntervalSql: "toStartOfInterval(NOW(), INTERVAL '5' MINUTE)",
         });
-        expect(intervalToSql("7d", undefined, 5, { inclusiveEnd: true })).toStrictEqual({
+        expect(
+            intervalToSql("7d", undefined, 5, { inclusiveEnd: true }),
+        ).toStrictEqual({
             startIntervalSql:
                 "toStartOfInterval(NOW() - INTERVAL '7' DAY, INTERVAL '5' MINUTE)",
             endIntervalSql: "NOW()",
