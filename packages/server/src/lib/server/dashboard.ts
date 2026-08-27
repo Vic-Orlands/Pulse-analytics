@@ -163,7 +163,8 @@ async function loadDashboardData(
     }
 
     const warnings: string[] = [];
-    const api = new AnalyticsEngineAPI(env.CF_ACCOUNT_ID, env.CF_BEARER_TOKEN);
+    try {
+        const api = new AnalyticsEngineAPI(env.CF_ACCOUNT_ID, env.CF_BEARER_TOKEN);
     const discoveredSites = await api
         .getSitesOrderedByHits("90d", 50)
         .catch((error) => {
@@ -453,6 +454,16 @@ async function loadDashboardData(
         cohorts,
         warnings,
     };
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error("Pulse dashboard failed", error);
+        return unavailable(
+            requestedSite,
+            interval,
+            configuredSites,
+            `dashboard: ${message || "Unexpected analytics error"}`,
+        );
+    }
 }
 
 export async function getDashboardData(
