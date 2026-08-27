@@ -188,6 +188,12 @@ export class AnalyticsEngineAPI {
         Authorization: string;
     };
     defaultUrl: string;
+    private nextQueryAt = 0;
+    private queryGate: Promise<void> = Promise.resolve();
+
+    private static readonly queryIntervalMs =
+        process.env.NODE_ENV === "test" ? 0 : 350;
+    private static readonly maxRateLimitRetries = 2;
 
     constructor(cfAccountId: string, cfApiToken: string) {
         this.cfAccountId = cfAccountId;
@@ -201,33 +207,97 @@ export class AnalyticsEngineAPI {
         };
     }
 
-    async query(query: string) {
-        return fetch(this.defaultUrl, {
-            method: "POST",
-            body: query,
-            headers: this.defaultHeaders,
+    private async paceQuery() {
+        if (AnalyticsEngineAPI.queryIntervalMs === 0) return;
+
+        let release = () => {};
+        const previous = this.queryGate;
+        this.queryGate = new Promise<void>((resolve) => {
+            release = resolve;
         });
+
+        await previous;
+        const wait = Math.max(0, this.nextQueryAt - Date.now());
+        if (wait > 0) {
+            await new Promise((resolve) => setTimeout(resolve, wait));
+        }
+        this.nextQueryAt = Date.now() + AnalyticsEngineAPI.queryIntervalMs;
+        release();
     }
 
-    async querySql<T extends Record<string, string | number>>(query: string): Promise<{ data: T[]; error?: string }> {
+    private retryDelay(response: Response, attempt: number) {
+        const retryAfter = response.headers.get("Retry-After");
+        if (retryAfter) {
+            const seconds = Number(retryAfter);
+            if (Number.isFinite(seconds)) return Math.min(seconds * 1000, 5000);
+
+            const date = Date.parse(retryAfter);
+            if (Number.isFinite(date))
+                return Math.min(Math.max(0, date - Date.now()), 5000);
+        }
+        return 750 * 2 ** attempt;
+    }
+
+    async query(query: string) {
+        for (
+            let attempt = 0;
+            attempt <= AnalyticsEngineAPI.maxRateLimitRetries;
+            attempt += 1
+        ) {
+            if (AnalyticsEngineAPI.queryIntervalMs > 0) await this.paceQuery();
+            const response = await fetch(this.defaultUrl, {
+                method: "POST",
+                body: query,
+                headers: this.defaultHeaders,
+            });
+
+            if (
+                response.status !== 429 ||
+                attempt === AnalyticsEngineAPI.maxRateLimitRetries
+            ) {
+                return response;
+            }
+
+            await new Promise((resolve) =>
+                setTimeout(resolve, this.retryDelay(response, attempt)),
+            );
+        }
+
+        throw new Error("Analytics Engine request failed after retrying");
+    }
+
+    async querySql<T extends Record<string, string | number>>(
+        query: string,
+    ): Promise<{ data: T[]; error?: string }> {
         const response = await this.query(query);
         const text = await response.text();
         let parsed: unknown;
         try {
             parsed = JSON.parse(text);
         } catch {
-            return { data: [], error: text.slice(0, 400) || response.statusText };
-        }
-
-        if (!response.ok) {
-            const failure = parsed as { error?: string; errors?: Array<{ message?: string }> };
             return {
                 data: [],
-                error: failure.error || failure.errors?.[0]?.message || response.statusText,
+                error: text.slice(0, 400) || response.statusText,
             };
         }
 
-        return { data: ((parsed as AnalyticsQueryResult<T>).data || []) as T[] };
+        if (!response.ok) {
+            const failure = parsed as {
+                error?: string;
+                errors?: Array<{ message?: string }>;
+            };
+            return {
+                data: [],
+                error:
+                    failure.error ||
+                    failure.errors?.[0]?.message ||
+                    response.statusText,
+            };
+        }
+
+        return {
+            data: ((parsed as AnalyticsQueryResult<T>).data || []) as T[],
+        };
     }
 
     private siteClause(siteId: string): string {
@@ -243,7 +313,10 @@ export class AnalyticsEngineAPI {
             return primary.data;
         }
 
-        const missingTable = /unknown table|doesn't exist|does not exist|not found/i.test(primary.error);
+        const missingTable =
+            /unknown table|doesn't exist|does not exist|not found/i.test(
+                primary.error,
+            );
         if (!missingTable) {
             throw new Error(primary.error);
         }
@@ -258,12 +331,32 @@ export class AnalyticsEngineAPI {
     async getEvents(siteId: string, interval: string, tz?: string) {
         // Analytics Engine allows at most 10 GROUP BY columns. Group by the stored
         // blob columns (not aliases) and keep copied text, page, origin, and device.
-        const { startIntervalSql, endIntervalSql } = intervalToSql(interval, tz, 5, { inclusiveEnd: true });
+        const { startIntervalSql, endIntervalSql } = intervalToSql(
+            interval,
+            tz,
+            5,
+            { inclusiveEnd: true },
+        );
         type EventRow = {
-            eventType: string; eventName: string; target: string; value: string; path: string;
-            country: string; region: string; city: string; deviceType: string; operatingSystem: string;
-            browser: string; host: string; userAgent: string; network: string; visitorId: string; sessionId: string;
-            count: number; lastSeen: string; sessionDepth: number;
+            eventType: string;
+            eventName: string;
+            target: string;
+            value: string;
+            path: string;
+            country: string;
+            region: string;
+            city: string;
+            deviceType: string;
+            operatingSystem: string;
+            browser: string;
+            host: string;
+            userAgent: string;
+            network: string;
+            visitorId: string;
+            sessionId: string;
+            count: number;
+            lastSeen: string;
+            sessionDepth: number;
         };
         const sql = (table: string) => `
             SELECT blob11 as eventType, blob12 as eventName, blob13 as target, blob14 as value,
@@ -288,8 +381,18 @@ export class AnalyticsEngineAPI {
     }
 
     async getSessionPaths(siteId: string, interval: string, tz?: string) {
-        const { startIntervalSql, endIntervalSql } = intervalToSql(interval, tz, 5, { inclusiveEnd: true });
-        type Row = { sessionId: string; path: string; firstSeen: string; hits: number };
+        const { startIntervalSql, endIntervalSql } = intervalToSql(
+            interval,
+            tz,
+            5,
+            { inclusiveEnd: true },
+        );
+        type Row = {
+            sessionId: string;
+            path: string;
+            firstSeen: string;
+            hits: number;
+        };
         const result = await this.querySql<Row>(`
             SELECT blob20 as sessionId, blob3 as path,
                 MIN(timestamp) as firstSeen, SUM(_sample_interval) as hits
@@ -305,7 +408,12 @@ export class AnalyticsEngineAPI {
     }
 
     async getLiveActivity(siteId: string) {
-        type Row = { sessionId: string; path: string; country: string; lastSeen: string };
+        type Row = {
+            sessionId: string;
+            path: string;
+            country: string;
+            lastSeen: string;
+        };
         const result = await this.querySql<Row>(`
             SELECT blob20 as sessionId, blob3 as path, blob4 as country, MAX(timestamp) as lastSeen
             FROM metricsDataset
@@ -320,8 +428,18 @@ export class AnalyticsEngineAPI {
         return result.data;
     }
 
-    async getEventValues(siteId: string, interval: string, eventType: string, tz?: string) {
-        const { startIntervalSql, endIntervalSql } = intervalToSql(interval, tz, 5, { inclusiveEnd: true });
+    async getEventValues(
+        siteId: string,
+        interval: string,
+        eventType: string,
+        tz?: string,
+    ) {
+        const { startIntervalSql, endIntervalSql } = intervalToSql(
+            interval,
+            tz,
+            5,
+            { inclusiveEnd: true },
+        );
         const type = escapeSqlString(eventType);
         type Row = { value: string; path: string; count: number };
         const sql = (table: string) => `
@@ -337,7 +455,12 @@ export class AnalyticsEngineAPI {
     }
 
     async getEventTypeCounts(siteId: string, interval: string, tz?: string) {
-        const { startIntervalSql, endIntervalSql } = intervalToSql(interval, tz, 5, { inclusiveEnd: true });
+        const { startIntervalSql, endIntervalSql } = intervalToSql(
+            interval,
+            tz,
+            5,
+            { inclusiveEnd: true },
+        );
         type Row = { eventType: string; count: number };
         const sql = (table: string) => `
             SELECT blob11 as eventType, SUM(_sample_interval) as count
@@ -350,7 +473,12 @@ export class AnalyticsEngineAPI {
     }
 
     async getConvertedSessions(siteId: string, interval: string, tz?: string) {
-        const { startIntervalSql, endIntervalSql } = intervalToSql(interval, tz, 5, { inclusiveEnd: true });
+        const { startIntervalSql, endIntervalSql } = intervalToSql(
+            interval,
+            tz,
+            5,
+            { inclusiveEnd: true },
+        );
         type Row = { sessionId: string; count: number };
         const sql = (table: string) => `
             SELECT blob20 as sessionId, SUM(_sample_interval) as count
@@ -702,7 +830,6 @@ export class AnalyticsEngineAPI {
             const responseData =
                 (await response.json()) as AnalyticsQueryResult<SelectionSet>;
 
-
             return responseData.data.reduce((acc, row) => {
                 // key is the comma joined string of siteId + all columns
                 const key = [
@@ -843,7 +970,14 @@ export class AnalyticsEngineAPI {
         );
 
         return Object.entries(allCountsResult)
-            .map(([host, counts]) => [host, counts.visitors, counts.views] as [string, number, number])
+            .map(
+                ([host, counts]) =>
+                    [host, counts.visitors, counts.views] as [
+                        string,
+                        number,
+                        number,
+                    ],
+            )
             .sort((a, b) => b[1] - a[1]);
     }
 
@@ -871,7 +1005,14 @@ export class AnalyticsEngineAPI {
         filters: SearchFilters = {},
         page: number = 1,
     ): Promise<[region: string, visitors: number][]> {
-        return this.getVisitorCountByColumn(siteId, "region", interval, tz, filters, page);
+        return this.getVisitorCountByColumn(
+            siteId,
+            "region",
+            interval,
+            tz,
+            filters,
+            page,
+        );
     }
 
     async getCountByOperatingSystem(
@@ -881,7 +1022,14 @@ export class AnalyticsEngineAPI {
         filters: SearchFilters = {},
         page: number = 1,
     ): Promise<[operatingSystem: string, visitors: number][]> {
-        return this.getVisitorCountByColumn(siteId, "operatingSystem", interval, tz, filters, page);
+        return this.getVisitorCountByColumn(
+            siteId,
+            "operatingSystem",
+            interval,
+            tz,
+            filters,
+            page,
+        );
     }
 
     async getSessionCount(
@@ -890,7 +1038,10 @@ export class AnalyticsEngineAPI {
         tz?: string,
         filters: SearchFilters = {},
     ): Promise<number> {
-        const { startIntervalSql, endIntervalSql } = intervalToSql(interval, tz);
+        const { startIntervalSql, endIntervalSql } = intervalToSql(
+            interval,
+            tz,
+        );
         const filterStr = filtersToSql(filters);
         const query = `
             SELECT SUM(_sample_interval * ${ColumnMappings.newSession}) as sessions
@@ -900,7 +1051,9 @@ export class AnalyticsEngineAPI {
                 ${filterStr}`;
         const response = await this.query(query);
         if (!response.ok) throw new Error(response.statusText);
-        const result = (await response.json()) as AnalyticsQueryResult<{ sessions: number }>;
+        const result = (await response.json()) as AnalyticsQueryResult<{
+            sessions: number;
+        }>;
         return Number(result.data[0]?.sessions || 0);
     }
 
@@ -1091,7 +1244,12 @@ export class AnalyticsEngineAPI {
 
         limit = limit || 10;
 
-        const { startIntervalSql, endIntervalSql } = intervalToSql(interval, undefined, 5, { inclusiveEnd: true });
+        const { startIntervalSql, endIntervalSql } = intervalToSql(
+            interval,
+            undefined,
+            5,
+            { inclusiveEnd: true },
+        );
 
         const query = `
             SELECT SUM(_sample_interval) as count,
