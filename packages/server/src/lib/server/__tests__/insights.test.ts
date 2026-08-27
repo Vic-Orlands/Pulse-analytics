@@ -4,7 +4,6 @@ import {
     presentCohorts,
     presentCopySnippets,
     presentFunnel,
-    presentJourneys,
     presentLiveVisitors,
     presentSessionInsights,
 } from "../insights";

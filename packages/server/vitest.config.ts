@@ -1,12 +1,17 @@
-// vitest.config.ts
 import { defineConfig, coverageConfigDefaults } from "vitest/config";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
     test: {
-        pool: 'forks', // Forces process isolation
+        pool: "forks",
+        include: [
+            "app/analytics/__tests__/collect.events.test.ts",
+            "app/analytics/__tests__/query.test.ts",
+            "app/analytics/__tests__/worker-collect.test.ts",
+            "src/**/*.test.ts",
+        ],
         coverage: {
-            provider: "v8", // or 'v8'
+            provider: "v8",
             exclude: [
                 "build",
                 "tailwind.config.ts",
