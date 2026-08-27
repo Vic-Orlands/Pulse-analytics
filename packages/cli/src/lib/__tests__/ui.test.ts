@@ -66,7 +66,7 @@ describe("UI module", () => {
             expect(snippet).toContain("script");
             expect(snippet).toContain('id="counterscale-script"');
             expect(snippet).toContain(
-                'data-site-id="YOUR_UNIQUE_SITE_ID__CHANGE_THIS"',
+                'data-site-id="your-app"',
             );
             expect(snippet).toContain(`${deployUrl}/tracker.js`);
         });
@@ -83,7 +83,7 @@ describe("UI module", () => {
             expect(snippet).toContain(`@counterscale/tracker@${version}`);
             expect(snippet).toContain("Counterscale.init");
             expect(snippet).toContain(
-                'siteId: "YOUR_UNIQUE_SITE_ID__CHANGE_THIS"',
+                'siteId: "your-app"',
             );
             expect(snippet).toContain(`reporterUrl: "${deployUrl}/collect"`);
         });

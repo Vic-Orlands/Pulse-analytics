@@ -33,6 +33,7 @@
     let visitorView = $state<"pages" | "routes" | "hostnames">("pages");
     let browserView = $state<"browsers" | "versions">("browsers");
     let installationOpen = $state(false);
+    let campaignView = $state<"source" | "medium" | "campaign">("source");
 
     const compact = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
     const formatNumber = (value: number) => compact.format(value);
@@ -41,6 +42,8 @@
     const visitorRows = $derived(visitorView === "pages" ? data.pages : visitorView === "routes" ? data.routes : data.hostnames);
     const geographyRows = $derived(geography === "countries" ? data.countries : data.regions);
     const browserRows = $derived(browserView === "browsers" ? data.browsers : data.browserVersions);
+    const campaignRows = $derived(campaignView === "source" ? data.utmSources : campaignView === "medium" ? data.utmMediums : data.utmCampaigns);
+    const conversion = $derived(data.funnel[data.funnel.length - 1]?.rate ?? 0);
     const growth = $derived(data.stats.previousVisitors > 0 ? ((data.stats.visitors - data.stats.previousVisitors) / data.stats.previousVisitors) * 100 : 0);
     const totalDevices = $derived(Math.max(data.devices.reduce((sum, item) => sum + item[1], 0), 1));
 
@@ -110,7 +113,11 @@
                         <input type="hidden" name="interval" value={data.interval} />
                         <label><span class="sr-only">Application</span>
                             <select name="site" value={data.siteId} onchange={(event) => event.currentTarget.form?.requestSubmit()}>
-                                {#each data.sites as site}<option value={site}>{site}</option>{/each}
+                                {#if data.sites.length}
+                                    {#each data.sites as site}<option value={site}>{site}</option>{/each}
+                                {:else}
+                                    <option value="">Install tracking to create an app</option>
+                                {/if}
                             </select>
                         </label>
                     </form>
@@ -131,6 +138,21 @@
                     </div>
                     {#if data.warnings.length}
                         <p class="query-warnings">{data.warnings.join(" · ")}</p>
+                    {/if}
+                    {#if !data.sites.length}
+                        <p class="query-warnings">No applications yet. Open Install tracking, paste the sample snippet into any app, and Pulse will create the app from the first pageview.</p>
+                    {/if}
+                    {#if data.alerts.length}
+                        <div class="alerts">
+                            {#each data.alerts as alert}
+                                <article data-severity={alert.severity}>
+                                    <span>{alert.severity}</span>
+                                    <strong>{alert.title}</strong>
+                                    <p>{alert.detail}</p>
+                                    <b>{alert.count}</b>
+                                </article>
+                            {/each}
+                        </div>
                     {/if}
                     <h1>
                         {data.stats.visitors.toLocaleString()} individuals connected to {data.siteId}.
@@ -164,6 +186,13 @@
                     </dl>
                 </section>
 
+                <section class="insight-strip ruled-frame" aria-label="Live audience and cohorts" data-reveal>
+                    <div><span>Live now</span><strong>{formatNumber(data.live.visitors)}</strong><small>People in the last 5 minutes</small></div>
+                    <div><span>New visitors</span><strong>{formatNumber(data.cohorts.newVisitors)}</strong><small>First seen this window</small></div>
+                    <div><span>Returning</span><strong>{formatNumber(data.cohorts.returningVisitors)}</strong><small>Seen before this window</small></div>
+                    <div><span>Converted</span><strong>{conversion.toFixed(0)}%</strong><small>Copied, clicked out, or downloaded</small></div>
+                </section>
+
                 <section class="chart-section ruled-frame" data-reveal>
                     <header class="section-head">
                         <div><span class="kicker">[ Daily Visitor Velocity — {chartMode === "bar" ? "Bar View" : "Area View"} ]</span><h2>Visitors over time</h2></div>
@@ -190,6 +219,7 @@
                             <button class:active={geography === "regions"} aria-pressed={geography === "regions"} onclick={() => (geography = "regions")}><HugeiconsIcon icon={Location01Icon} size={13} strokeWidth={1.6} />Regions</button>
                         </div>
                     </header>
+                    <div class="geo-split">
                     <div class="geography-grid ruled-frame">
                         {#each geographyRows.slice(0, 4) as row, index}
                             <article>
@@ -199,6 +229,14 @@
                                 <i style={`--share:${Math.max(12, (row[1] / Math.max(geographyRows[0]?.[1] ?? 1, 1)) * 100)}%`}></i>
                             </article>
                         {/each}
+                    </div>
+                    <div class="simple-list ruled-frame">
+                        {#each geographyRows.slice(4, 12) as row}
+                            <p><span>{row[0]}</span><strong>{formatNumber(row[1])}</strong></p>
+                        {:else}
+                            <p><span>More regions appear as traffic spreads.</span><strong></strong></p>
+                        {/each}
+                    </div>
                     </div>
                 </section>
 
@@ -243,6 +281,82 @@
                     </article>
                 </section>
 
+                <section class="duet" data-reveal>
+                    <article class="list-section">
+                        <header class="section-head compact-head"><div><span class="kicker">[ Entry Pages ]</span><h2>Where visits begin</h2></div><span class="column-label">Sessions</span></header>
+                        <SurfaceList rows={data.entries} empty="No landing pages in this period." />
+                    </article>
+                    <article class="list-section">
+                        <header class="section-head compact-head"><div><span class="kicker">[ Exit Pages ]</span><h2>Where visits end</h2></div><span class="column-label">Sessions</span></header>
+                        <SurfaceList rows={data.exits} empty="No exit pages in this period." />
+                    </article>
+                </section>
+
+                <section class="list-section journeys" data-reveal>
+                    <header class="section-head compact-head"><div><span class="kicker">[ Session Journeys ]</span><h2>Ordered paths through the site</h2></div></header>
+                    <div class="simple-list ruled-frame">
+                        {#each data.journeys as journey}
+                            <p><span>{journey.path}</span><strong>{formatNumber(journey.count)}</strong></p>
+                        {:else}
+                            <p><span>Journeys appear after sessions include a page path.</span><strong></strong></p>
+                        {/each}
+                    </div>
+                </section>
+
+                <section class="duet" data-reveal>
+                    <article class="list-section">
+                        <header class="section-head compact-head">
+                            <div><span class="kicker">[ Campaign Board ]</span><h2>UTM attribution</h2></div>
+                            <div class="segmented compact-tabs" aria-label="Campaign dimension">
+                                <button class:active={campaignView === "source"} aria-pressed={campaignView === "source"} onclick={() => (campaignView = "source")}>Source</button>
+                                <button class:active={campaignView === "medium"} aria-pressed={campaignView === "medium"} onclick={() => (campaignView = "medium")}>Medium</button>
+                                <button class:active={campaignView === "campaign"} aria-pressed={campaignView === "campaign"} onclick={() => (campaignView = "campaign")}>Campaign</button>
+                            </div>
+                        </header>
+                        <SurfaceList rows={campaignRows} empty="No UTM parameters in this period." />
+                    </article>
+                    <article class="list-section">
+                        <header class="section-head compact-head"><div><span class="kicker">[ Bounce By Landing ]</span><h2>Single-page landings</h2></div><span class="column-label">Bounces / sessions</span></header>
+                        <SurfaceList rows={data.bounceByLanding} empty="No bounce-by-landing data in this period." />
+                    </article>
+                </section>
+
+                <section class="technology copies" data-reveal>
+                    <article class="tech-section">
+                        <header class="section-head compact-head"><div><span class="kicker">[ Copy Intelligence ]</span><h2>Most copied text</h2></div></header>
+                        <div class="simple-list ruled-frame">
+                            {#each data.copies as row}
+                                <p><span title={row.snippet}>{row.snippet}<small> {row.path}</small></span><strong>{formatNumber(row.count)}</strong></p>
+                            {:else}
+                                <p><span>Copied snippets appear after visitors copy text.</span><strong></strong></p>
+                            {/each}
+                        </div>
+                    </article>
+                    <article class="tech-section">
+                        <header class="section-head compact-head"><div><span class="kicker">[ Outbound Clicks ]</span><h2>Leaves</h2></div></header>
+                        <SurfaceList rows={data.outbound} empty="No outbound clicks in this period." />
+                    </article>
+                    <article class="tech-section">
+                        <header class="section-head compact-head"><div><span class="kicker">[ Downloads ]</span><h2>Files</h2></div></header>
+                        <SurfaceList rows={data.downloads} empty="No file downloads in this period." />
+                    </article>
+                </section>
+
+                <section class="funnel ruled-frame" data-reveal>
+                    <header class="section-head compact-head"><div><span class="kicker">[ Conversion Funnel ]</span><h2>Landed to action</h2></div></header>
+                    <div class="funnel-steps">
+                        {#each data.funnel as step, index}
+                            <article>
+                                <span>{String(index + 1).padStart(2, "0")}</span>
+                                <h3>{step.label}</h3>
+                                <strong>{formatNumber(step.count)}</strong>
+                                <small>{step.rate.toFixed(0)}% of sessions</small>
+                                <i style={`--share:${Math.max(8, step.rate)}%`}></i>
+                            </article>
+                        {/each}
+                    </div>
+                </section>
+
                 <a class="ledger-callout ruled-frame" href={`/signals?site=${data.siteId}&interval=${data.interval}`} data-reveal>
                     <div><span class="kicker">[ Event Intelligence ]</span><h2>Open the Signal Ledger</h2></div>
                     <p>Review screenshot captures, copy actions, scraping detections, and the interactions surrounding them.</p>
@@ -250,7 +364,7 @@
                 </a>
             </main>
         </div>
-        <InstallationSheet open={installationOpen} sites={data.sites} onclose={closeInstallation} />
+        <InstallationSheet open={installationOpen} onclose={closeInstallation} />
     </div>
 {/if}
 
@@ -296,7 +410,31 @@
     dt { display: flex; align-items: center; gap: 7px; color: var(--muted); font-family: "IBM Plex Mono", monospace; font-size: 8px; text-transform: uppercase; }dt :global(svg) { color: var(--accent); }
     dd { margin: 12px 0 8px; font-family: "Instrument Serif", Georgia, serif; font-size: clamp(34px, 4vw, 46px); line-height: 1; font-variant-numeric: tabular-nums; }
     .metric-section small { color: var(--muted); font-size: 9px; }.metric-section small b { color: var(--accent); font-weight: 600; }
-    .chart-section, .content-section, .duet, .technology, .ledger-callout { margin-top: 58px; }
+    .chart-section, .content-section, .duet, .technology, .ledger-callout, .journeys, .funnel, .insight-strip { margin-top: 58px; }
+    .insight-strip { display: grid; grid-template-columns: repeat(4, 1fr); background: color-mix(in srgb, var(--panel) 42%, transparent); }
+    .insight-strip > div { min-width: 0; padding: 18px 22px 20px; }
+    .insight-strip > div + div { box-shadow: -1px 0 var(--line); }
+    .insight-strip span { color: var(--muted); font-family: "IBM Plex Mono", monospace; font-size: 8px; text-transform: uppercase; }
+    .insight-strip strong { display: block; margin: 10px 0 6px; font-family: "Instrument Serif", Georgia, serif; font-size: clamp(26px, 3vw, 36px); font-weight: 400; }
+    .insight-strip small { color: var(--muted); font-size: 9px; }
+    .alerts { display: grid; gap: 10px; max-width: 860px; margin-top: 18px; }
+    .alerts article { display: grid; grid-template-columns: auto 1fr auto; gap: 8px 14px; padding: 12px 14px; box-shadow: 0 0 0 1px var(--line); }
+    .alerts span, .alerts b { font-family: "IBM Plex Mono", monospace; font-size: 8px; text-transform: uppercase; color: var(--accent); }
+    .alerts strong { font-size: 13px; }
+    .alerts p { grid-column: 2; color: var(--muted); font-size: 10px; line-height: 1.5; }
+    .geo-split { display: grid; grid-template-columns: 1.7fr .8fr; gap: 28px; }
+    .funnel { padding: 22px 22px 8px; background: color-mix(in srgb, var(--panel) 36%, transparent); }
+    .funnel-steps { display: grid; grid-template-columns: repeat(3, 1fr); }
+    .funnel-steps article { position: relative; min-height: 150px; padding: 8px 18px 22px; overflow: hidden; }
+    .funnel-steps article + article { box-shadow: -1px 0 var(--line); }
+    .funnel-steps span { color: var(--muted); font-family: "IBM Plex Mono", monospace; font-size: 8px; }
+    .funnel-steps h3 { margin: 22px 0 12px; font-size: 22px; }
+    .funnel-steps strong { font-family: "IBM Plex Mono", monospace; font-size: 12px; }
+    .funnel-steps small { display: block; margin-top: 6px; color: var(--muted); font-size: 8px; text-transform: uppercase; }
+    .funnel-steps i { position: absolute; bottom: 0; left: 0; width: var(--share); height: 2px; background: var(--accent); }
+    .copies .simple-list p > span { min-width: 0; overflow: hidden; }
+    .copies .simple-list p > span small { color: var(--muted); font-size: 8px; text-transform: uppercase; }
+    .journeys .simple-list p > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .chart-section { padding: 28px 24px 20px; background: color-mix(in srgb, var(--panel) 42%, transparent); }
     .section-head { display: flex; align-items: end; justify-content: space-between; gap: 30px; margin-bottom: 28px; }
     .compact-head { margin-bottom: 20px; }
@@ -317,14 +455,14 @@
     [data-reveal] { opacity: 0; }
     :global(.sr-only) { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
     button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-    @media (max-width: 980px) { .technology { grid-template-columns: 1fr 1fr; }.browser-section { grid-column: 1 / -1; }.ledger-callout { grid-template-columns: 1fr 1fr; }.ledger-callout > strong { grid-column: 2; } }
+    @media (max-width: 980px) { .technology { grid-template-columns: 1fr 1fr; }.browser-section { grid-column: 1 / -1; }.ledger-callout { grid-template-columns: 1fr 1fr; }.ledger-callout > strong { grid-column: 2; }.geo-split { grid-template-columns: 1fr; } }
     @media (max-width: 700px) {
         .frame, .nav-frame { width: min(100% - 28px, 1120px); }.nav-frame { gap: 10px; min-height: 54px; }.site-form select { max-width: 100px; }.page-title { display: none; }.periods a { min-width: 31px; padding-inline: 6px; }
         .frame { padding-top: 38px; padding-bottom: 100px; }.journal-meta { align-items: start; flex-direction: column; gap: 8px; }.journal-head { margin-bottom: 44px; }
         .utility-head span:last-child { display: none; }.metric-section dl { grid-template-columns: 1fr 1fr; }.metric-section dl > div + div { box-shadow: -1px 0 var(--line); }.metric-section dl > div:nth-child(3) { box-shadow: 0 -1px var(--line); }.metric-section dl > div:nth-child(4) { box-shadow: -1px -1px var(--line); }
-        .chart-section, .content-section, .duet, .technology, .ledger-callout { margin-top: 48px; }.chart-section { padding: 22px 16px 18px; }.section-head { align-items: start; flex-direction: column; margin-bottom: 22px; }.chart-tools { width: 100%; max-width: none; }.chart-tools p { margin-right: auto; }
+        .chart-section, .content-section, .duet, .technology, .ledger-callout, .journeys, .funnel, .insight-strip { margin-top: 48px; }.chart-section { padding: 22px 16px 18px; }.section-head { align-items: start; flex-direction: column; margin-bottom: 22px; }.chart-tools { width: 100%; max-width: none; }.chart-tools p { margin-right: auto; }
         .geography-grid { grid-template-columns: 1fr 1fr; }.geography-grid article:nth-child(3) { box-shadow: 0 -1px var(--line); }.geography-grid article:nth-child(4) { box-shadow: -1px -1px var(--line); }
-        .duet, .technology { grid-template-columns: 1fr; gap: 46px; }.browser-section { grid-column: auto; }.annotations { grid-template-columns: 1fr; }.ledger-callout { grid-template-columns: 1fr; align-items: start; }.ledger-callout > strong { grid-column: auto; }
+        .duet, .technology, .geo-split, .funnel-steps, .insight-strip { grid-template-columns: 1fr; gap: 46px; }.insight-strip > div + div, .funnel-steps article + article { box-shadow: 0 -1px var(--line); }.browser-section { grid-column: auto; }.annotations { grid-template-columns: 1fr; }.ledger-callout { grid-template-columns: 1fr; align-items: start; }.ledger-callout > strong { grid-column: auto; }
     }
     @media (prefers-reduced-motion: reduce) { .dashboard, .app-stage, .ledger-callout, .geography-grid article > i { transition: none; } [data-reveal] { opacity: 1; } }
 </style>

@@ -48,7 +48,7 @@ export function getScriptSnippet(
         `
 <script
     id="counterscale-script"
-    data-site-id="YOUR_UNIQUE_SITE_ID__CHANGE_THIS"
+    data-site-id="your-app"
     src="${deployUrl}/${scriptName}.js"
     defer
 ></script>`,
@@ -67,7 +67,7 @@ export function getPackageSnippet(
 import * as Counterscale from "@counterscale/tracker";
 
 Counterscale.init({
-    siteId: "YOUR_UNIQUE_SITE_ID__CHANGE_THIS",
+    siteId: "your-app",
     reporterUrl: "${deployUrl}/collect",
 });`,
         { language: "typescript", theme: highlightTheme },

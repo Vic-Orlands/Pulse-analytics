@@ -6,7 +6,7 @@
     let { event, onclose }: { event: AnalyticsEvent | null; onclose: () => void } = $props();
     let closeButton = $state<HTMLButtonElement>();
 
-    const names = { screenshot: "Screenshot", copy: "Copy", scrape: "Scraping", interaction: "Interaction" } as const;
+    const names = { screenshot: "Screenshot", copy: "Copy", scrape: "Scraping", interaction: "Interaction", outbound: "Outbound", download: "Download" } as const;
     const meaningful = (value: string) => value || "Not available";
 
     function handleKeydown(keyboard: KeyboardEvent) {
@@ -36,9 +36,9 @@
             <button bind:this={closeButton} onclick={onclose} aria-label="Close event details"><HugeiconsIcon icon={Cancel01Icon} size={17} strokeWidth={1.6} /></button>
         </header>
 
-        {#if event.type === "copy" && event.detail}
+        {#if (event.type === "copy" || event.type === "outbound" || event.type === "download") && event.detail}
             <section class="payload">
-                <span>Copied content</span>
+                <span>{event.type === "copy" ? "Copied content" : event.type === "outbound" ? "Destination" : "Downloaded file"}</span>
                 <blockquote>{event.detail}</blockquote>
                 <p>Captured from {meaningful(event.visitor.path)} · {event.origin} · {event.device}</p>
             </section>

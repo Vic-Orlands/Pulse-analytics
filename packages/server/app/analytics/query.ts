@@ -235,6 +235,26 @@ export class AnalyticsEngineAPI {
         return `(index1 = '${value}' OR ${ColumnMappings.siteId} = '${value}')`;
     }
 
+    private async queryEventsTable<T extends Record<string, string | number>>(
+        sqlFor: (table: string) => string,
+    ): Promise<T[]> {
+        const primary = await this.querySql<T>(sqlFor("eventsDataset"));
+        if (!primary.error) {
+            return primary.data;
+        }
+
+        const missingTable = /unknown table|doesn't exist|does not exist|not found/i.test(primary.error);
+        if (!missingTable) {
+            throw new Error(primary.error);
+        }
+
+        const fallback = await this.querySql<T>(sqlFor("metricsDataset"));
+        if (fallback.error) {
+            throw new Error(primary.error);
+        }
+        return fallback.data;
+    }
+
     async getEvents(siteId: string, interval: string, tz?: string) {
         // Analytics Engine allows at most 10 GROUP BY columns. Group by the stored
         // blob columns (not aliases) and keep copied text, page, origin, and device.
@@ -259,26 +279,104 @@ export class AnalyticsEngineAPI {
             FROM ${table}
             WHERE timestamp >= ${startIntervalSql} AND timestamp < ${endIntervalSql}
                 AND ${this.siteClause(siteId)}
-                AND blob11 IN ('screenshot', 'copy', 'scrape', 'interaction')
+                AND blob11 IN ('screenshot', 'copy', 'scrape', 'interaction', 'outbound', 'download')
             GROUP BY blob11, blob12, blob13, blob14, blob3, blob4, blob16, blob17, blob10, blob18
             ORDER BY lastSeen DESC
             LIMIT 100`;
 
-        const primary = await this.querySql<EventRow>(sql("eventsDataset"));
-        if (!primary.error) {
-            return primary.data;
-        }
+        return this.queryEventsTable<EventRow>(sql);
+    }
 
-        const missingTable = /unknown table|doesn't exist|does not exist|not found/i.test(primary.error);
-        if (!missingTable) {
-            throw new Error(primary.error);
-        }
+    async getSessionPaths(siteId: string, interval: string, tz?: string) {
+        const { startIntervalSql, endIntervalSql } = intervalToSql(interval, tz, 5, { inclusiveEnd: true });
+        type Row = { sessionId: string; path: string; firstSeen: string; hits: number };
+        const result = await this.querySql<Row>(`
+            SELECT blob20 as sessionId, blob3 as path,
+                MIN(timestamp) as firstSeen, SUM(_sample_interval) as hits
+            FROM metricsDataset
+            WHERE timestamp >= ${startIntervalSql} AND timestamp < ${endIntervalSql}
+                AND ${this.siteClause(siteId)}
+                AND blob20 != ''
+            GROUP BY blob20, blob3
+            ORDER BY firstSeen ASC
+            LIMIT 4000`);
+        if (result.error) throw new Error(result.error);
+        return result.data;
+    }
 
-        const fallback = await this.querySql<EventRow>(sql("metricsDataset"));
-        if (fallback.error) {
-            throw new Error(primary.error);
-        }
-        return fallback.data;
+    async getLiveActivity(siteId: string) {
+        type Row = { sessionId: string; path: string; country: string; lastSeen: string };
+        const result = await this.querySql<Row>(`
+            SELECT blob20 as sessionId, blob3 as path, blob4 as country, MAX(timestamp) as lastSeen
+            FROM metricsDataset
+            WHERE timestamp >= NOW() - INTERVAL '5' MINUTE
+                AND timestamp < NOW()
+                AND ${this.siteClause(siteId)}
+                AND blob20 != ''
+            GROUP BY blob20, blob3, blob4
+            ORDER BY lastSeen DESC
+            LIMIT 200`);
+        if (result.error) throw new Error(result.error);
+        return result.data;
+    }
+
+    async getEventValues(siteId: string, interval: string, eventType: string, tz?: string) {
+        const { startIntervalSql, endIntervalSql } = intervalToSql(interval, tz, 5, { inclusiveEnd: true });
+        const type = escapeSqlString(eventType);
+        type Row = { value: string; path: string; count: number };
+        const sql = (table: string) => `
+            SELECT blob14 as value, blob3 as path, SUM(_sample_interval) as count
+            FROM ${table}
+            WHERE timestamp >= ${startIntervalSql} AND timestamp < ${endIntervalSql}
+                AND ${this.siteClause(siteId)}
+                AND blob11 = '${type}'
+            GROUP BY blob14, blob3
+            ORDER BY count DESC
+            LIMIT 40`;
+        return this.queryEventsTable<Row>(sql);
+    }
+
+    async getEventTypeCounts(siteId: string, interval: string, tz?: string) {
+        const { startIntervalSql, endIntervalSql } = intervalToSql(interval, tz, 5, { inclusiveEnd: true });
+        type Row = { eventType: string; count: number };
+        const sql = (table: string) => `
+            SELECT blob11 as eventType, SUM(_sample_interval) as count
+            FROM ${table}
+            WHERE timestamp >= ${startIntervalSql} AND timestamp < ${endIntervalSql}
+                AND ${this.siteClause(siteId)}
+                AND blob11 IN ('screenshot', 'copy', 'scrape', 'interaction', 'outbound', 'download')
+            GROUP BY blob11`;
+        return this.queryEventsTable<Row>(sql);
+    }
+
+    async getConvertedSessions(siteId: string, interval: string, tz?: string) {
+        const { startIntervalSql, endIntervalSql } = intervalToSql(interval, tz, 5, { inclusiveEnd: true });
+        type Row = { sessionId: string; count: number };
+        const sql = (table: string) => `
+            SELECT blob20 as sessionId, SUM(_sample_interval) as count
+            FROM ${table}
+            WHERE timestamp >= ${startIntervalSql} AND timestamp < ${endIntervalSql}
+                AND ${this.siteClause(siteId)}
+                AND blob11 IN ('copy', 'outbound', 'download')
+                AND blob20 != ''
+            GROUP BY blob20
+            LIMIT 2000`;
+        return this.queryEventsTable<Row>(sql);
+    }
+
+    async getVisitorCohorts(siteId: string) {
+        type Row = { visitorId: string; firstSeen: string; lastSeen: string };
+        const result = await this.querySql<Row>(`
+            SELECT blob19 as visitorId, MIN(timestamp) as firstSeen, MAX(timestamp) as lastSeen
+            FROM metricsDataset
+            WHERE timestamp >= NOW() - INTERVAL '90' DAY
+                AND timestamp < NOW()
+                AND ${this.siteClause(siteId)}
+                AND blob19 != ''
+            GROUP BY blob19
+            LIMIT 10000`);
+        if (result.error) throw new Error(result.error);
+        return result.data;
     }
 
     async getViewsGroupedByInterval(
@@ -993,7 +1091,7 @@ export class AnalyticsEngineAPI {
 
         limit = limit || 10;
 
-        const { startIntervalSql, endIntervalSql } = intervalToSql(interval);
+        const { startIntervalSql, endIntervalSql } = intervalToSql(interval, undefined, 5, { inclusiveEnd: true });
 
         const query = `
             SELECT SUM(_sample_interval) as count,

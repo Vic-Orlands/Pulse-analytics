@@ -1,6 +1,7 @@
 "use strict";
 
 import * as Counterscale from "./index";
+import { collectUrlFromTrackerSrc, resolveSiteId } from "./lib/bootstrap";
 
 function findReporterScript() {
     const el = document.getElementById(
@@ -29,10 +30,13 @@ function getLegacySiteId(): string | undefined {
 
 function init() {
     const script = findReporterScript();
-    const siteId = script?.getAttribute("data-site-id") || getLegacySiteId();
+    const siteId = resolveSiteId(
+        script?.getAttribute("data-site-id") || getLegacySiteId(),
+        window.location.hostname,
+    );
     const reportOnLocalhost = (script?.hasAttribute("data-report-localhost") && script?.getAttribute("data-report-localhost") !== "false") || false;
 
-    const reporterUrl = script?.src.replace("tracker.js", "collect");
+    const reporterUrl = collectUrlFromTrackerSrc(script?.src || "");
 
     if (!siteId || !reporterUrl) {
         return;
