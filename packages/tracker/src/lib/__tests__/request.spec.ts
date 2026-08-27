@@ -8,7 +8,7 @@ describe("makeRequest", () => {
     });
 
     test("sends classified events with sendBeacon so copies survive navigation", () => {
-        const sendBeacon = vi.fn(() => true);
+        const sendBeacon = vi.fn<(url: string, data?: BodyInit | null) => boolean>(() => true);
         vi.stubGlobal("navigator", { sendBeacon });
 
         makeRequest("https://pulse.example/collect", {

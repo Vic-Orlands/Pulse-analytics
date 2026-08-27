@@ -26,10 +26,10 @@
         "preview": "pnpm build && wrangler dev",
         "deploy": "pnpm build && wrangler deploy",
         "lint": "eslint src",
-        "test": "vitest run",
-        "test-ci": "vitest run --coverage",
+        "test": "TZ=EST vitest run",
+        "test-ci": "TZ=EST vitest run --coverage",
         "typecheck": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-        "prepare": "husky",
+        "prepare": "svelte-kit sync && husky",
         "types:gen": "wrangler types",
         "copytracker": "cp ../tracker/dist/loader/tracker.js ./static/tracker.js"
     },
