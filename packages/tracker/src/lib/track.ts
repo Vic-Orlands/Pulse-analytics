@@ -40,14 +40,51 @@ export function trackEvent(client: Client, opts: TrackEventOpts) {
     params.et = opts.type;
     params.en = opts.name.slice(0, 120);
     params.tg = (opts.target || context.path).slice(0, 240);
-    if (opts.value) params.val = opts.value.slice(0, 240);
+    if (opts.value) params.val = opts.value.slice(0, 400);
     makeRequest(client.reporterUrl, params);
+}
+
+function isSensitiveCopyTarget(target: EventTarget | null): boolean {
+    if (!(target instanceof Element)) return false;
+    const field = target.closest("input, textarea, select");
+    if (!field) return false;
+    if (field instanceof HTMLInputElement) {
+        return ["password", "email", "tel", "hidden"].includes(field.type);
+    }
+    return true;
+}
+
+function copiedPayload(event: ClipboardEvent): string {
+    const selected = typeof window.getSelection === "function" ? window.getSelection()?.toString() || "" : "";
+    const fromClipboard = event.clipboardData?.getData("text/plain") || "";
+    return (fromClipboard || selected).replace(/\s+/g, " ").trim().slice(0, 400);
+}
+
+function describeCopyTarget(target: EventTarget | null): string {
+    const page = window.location.pathname || "/";
+    if (!(target instanceof Element)) return page;
+    const tagged = target.closest<HTMLElement>("[data-counterscale-event-target], [data-counterscale-event-name]");
+    if (tagged?.dataset.counterscaleEventTarget) return tagged.dataset.counterscaleEventTarget;
+    const hint = target.closest("pre, code, h1, h2, h3, h4, blockquote, figcaption, li, p, a, td, th");
+    const tag = hint?.tagName.toLowerCase();
+    const id = hint instanceof HTMLElement && hint.id ? `#${hint.id}` : "";
+    const named = tagged?.dataset.counterscaleEventName;
+    const surface = [tag, id].filter(Boolean).join("") || named;
+    return surface ? `${page} · ${surface}` : page;
 }
 
 export function autoTrackEvents(client: Client) {
     const onCopy = (event: ClipboardEvent) => {
+        if (isSensitiveCopyTarget(event.target)) return;
+        const value = copiedPayload(event);
+        if (!value) return;
         const element = event.target instanceof Element ? event.target.closest<HTMLElement>("[data-counterscale-event-name], code, pre") : null;
-        trackEvent(client, { type: "copy", name: element?.dataset.counterscaleEventName || "Content copied", target: element?.dataset.counterscaleEventTarget || window.location.pathname });
+        trackEvent(client, {
+            type: "copy",
+            name: element?.dataset.counterscaleEventName || "Content copied",
+            target: describeCopyTarget(event.target),
+            value,
+        });
     };
     const onClick = (event: MouseEvent) => {
         const element = event.target instanceof Element ? event.target.closest<HTMLElement>("[data-counterscale-event]") : null;
@@ -56,9 +93,18 @@ export function autoTrackEvents(client: Client) {
         if (!["screenshot", "copy", "scrape", "interaction"].includes(type)) return;
         trackEvent(client, { type, name: element.dataset.counterscaleEventName || element.textContent?.trim() || "Interaction", target: element.dataset.counterscaleEventTarget || window.location.pathname, value: element.dataset.counterscaleEventValue });
     };
+    const onKeyUp = (event: KeyboardEvent) => {
+        if (event.key !== "PrintScreen") return;
+        trackEvent(client, { type: "screenshot", name: "Screenshot captured", target: window.location.pathname || "/" });
+    };
     document.addEventListener("copy", onCopy);
     document.addEventListener("click", onClick);
-    return () => { document.removeEventListener("copy", onCopy); document.removeEventListener("click", onClick); };
+    document.addEventListener("keyup", onKeyUp);
+    return () => {
+        document.removeEventListener("copy", onCopy);
+        document.removeEventListener("click", onClick);
+        document.removeEventListener("keyup", onKeyUp);
+    };
 }
 
 export function autoTrackPageviews(client: Client) {

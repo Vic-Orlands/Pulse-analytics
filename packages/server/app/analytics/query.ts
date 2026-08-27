@@ -160,6 +160,10 @@ function filtersToSql(filters: SearchFilters) {
     return filterStr;
 }
 
+function escapeSqlString(value: string): string {
+    return String(value).replace(/\\/g, "\\\\").replace(/'/g, "''");
+}
+
 /**
  * NOTE: There are a bunch of "unsafe" SQL-like queries in here, in the sense that
  *       they are unparameterized raw SQL-like strings sent over HTTP. Cloudflare Analytics Engine
@@ -202,29 +206,27 @@ export class AnalyticsEngineAPI {
     }
 
     async getEvents(siteId: string, interval: string, tz?: string) {
+        // Analytics Engine allows at most 10 GROUP BY columns. Keep the dimensions
+        // that explain a registered signal: what happened, what was captured, where,
+        // and which device/region produced it.
         const { startIntervalSql, endIntervalSql } = intervalToSql(interval, tz);
         const response = await this.query(`
-            SELECT blob1 as host, blob2 as userAgent, blob3 as path, blob4 as country,
-                blob5 as referrer, blob6 as browser, blob7 as deviceModel, blob9 as browserVersion,
-                blob10 as deviceType, blob11 as eventType, blob12 as eventName, blob13 as target,
-                blob14 as value, blob15 as network, blob16 as region, blob17 as city,
-                blob18 as operatingSystem, blob19 as visitorId, blob20 as sessionId,
-                SUM(_sample_interval) as count, MAX(double2) as sessionDepth, MAX(timestamp) as lastSeen
+            SELECT blob11 as eventType, blob12 as eventName, blob13 as target, blob14 as value,
+                blob3 as path, blob4 as country, blob16 as region, blob17 as city,
+                blob10 as deviceType, blob18 as operatingSystem,
+                SUM(_sample_interval) as count, MAX(timestamp) as lastSeen, MAX(double2) as sessionDepth
             FROM eventsDataset
             WHERE timestamp >= ${startIntervalSql} AND timestamp < ${endIntervalSql}
-                AND blob8 = '${siteId}'
-            GROUP BY host, userAgent, path, country, referrer, browser, deviceModel, browserVersion,
-                deviceType, eventType, eventName, target, value, network, region, city,
-                operatingSystem, visitorId, sessionId
+                AND blob8 = '${escapeSqlString(siteId)}'
+                AND blob11 IN ('screenshot', 'copy', 'scrape', 'interaction')
+            GROUP BY eventType, eventName, target, value, path, country, region, city, deviceType, operatingSystem
             ORDER BY lastSeen DESC
             LIMIT 100`);
         if (!response.ok) throw new Error(response.statusText);
         const result = (await response.json()) as AnalyticsQueryResult<{
-            host: string; userAgent: string; path: string; country: string; referrer: string;
-            browser: string; deviceModel: string; browserVersion: string; deviceType: string;
-            eventType: string; eventName: string; target: string; value: string; network: string;
-            region: string; city: string; operatingSystem: string; visitorId: string; sessionId: string;
-            count: number; sessionDepth: number; lastSeen: string;
+            eventType: string; eventName: string; target: string; value: string; path: string;
+            country: string; region: string; city: string; deviceType: string; operatingSystem: string;
+            count: number; lastSeen: string; sessionDepth: number;
         }>;
         return result.data;
     }
@@ -610,7 +612,9 @@ export class AnalyticsEngineAPI {
         const _column = ColumnMappings[column];
 
         if (keys.length > 0) {
-            filterStr += ` AND ${_column} IN (${keys.map((key) => `'${key}'`).join(", ")})`;
+            filterStr += ` AND ${_column} IN (${keys
+                .map((key) => `'${escapeSqlString(String(key))}'`)
+                .join(", ")})`;
         }
 
         const query = `
@@ -694,6 +698,7 @@ export class AnalyticsEngineAPI {
         tz?: string,
         filters: SearchFilters = {},
         page: number = 1,
+        limit: number = 10,
     ): Promise<[path: string, visitors: number, views: number][]> {
         const allCountsResultPromise = this.getAllCountsByColumn(
             siteId,
@@ -702,6 +707,7 @@ export class AnalyticsEngineAPI {
             tz,
             filters,
             page,
+            limit,
         );
 
         return allCountsResultPromise.then((allCountsResult) => {
@@ -721,6 +727,7 @@ export class AnalyticsEngineAPI {
         tz?: string,
         filters: SearchFilters = {},
         page: number = 1,
+        limit: number = 10,
     ): Promise<[host: string, visitors: number, views: number][]> {
         const allCountsResult = await this.getAllCountsByColumn(
             siteId,
@@ -729,6 +736,7 @@ export class AnalyticsEngineAPI {
             tz,
             filters,
             page,
+            limit,
         );
 
         return Object.entries(allCountsResult)
@@ -799,6 +807,7 @@ export class AnalyticsEngineAPI {
         tz?: string,
         filters: SearchFilters = {},
         page: number = 1,
+        limit: number = 10,
     ): Promise<[referrer: string, visitors: number, views: number][]> {
         const allCountsResultPromise = this.getAllCountsByColumn(
             siteId,
@@ -807,6 +816,7 @@ export class AnalyticsEngineAPI {
             tz,
             filters,
             page,
+            limit,
         );
 
         return allCountsResultPromise.then((allCountsResult) => {

@@ -13,6 +13,9 @@ export type AnalyticsEvent = {
     type: "screenshot" | "copy" | "scrape" | "interaction";
     label: string;
     target: string;
+    detail: string;
+    origin: string;
+    device: string;
     count: number;
     change: number;
     lastSeen: string;

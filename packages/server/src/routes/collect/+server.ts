@@ -8,7 +8,11 @@ export const GET: RequestHandler = async ({ request, platform }) => {
 
     return collectRequestHandler(request, platform.env, {
         country: typeof platform.cf?.country === "string" ? platform.cf.country : "",
-        region: typeof platform.cf?.region === "string" ? platform.cf.region : "",
+        region: typeof platform.cf?.region === "string"
+            ? platform.cf.region
+            : typeof platform.cf?.regionCode === "string"
+                ? platform.cf.regionCode
+                : "",
         city: typeof platform.cf?.city === "string" ? platform.cf.city : "",
         network: request.headers.get("cf-connecting-ip") || "",
     });
