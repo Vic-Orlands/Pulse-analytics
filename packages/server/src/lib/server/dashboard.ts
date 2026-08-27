@@ -97,8 +97,13 @@ export async function getDashboardData(url: URL, env?: App.Platform["env"]): Pro
         return unavailable(requestedSite, interval, configuredSites);
     }
 
+    const warnings: string[] = [];
     const api = new AnalyticsEngineAPI(env.CF_ACCOUNT_ID, env.CF_BEARER_TOKEN);
-    const discoveredSites = await api.getSitesOrderedByHits("90d", 50).catch(() => []);
+    const discoveredSites = await api.getSitesOrderedByHits("90d", 50).catch((error) => {
+        const message = error instanceof Error ? error.message : String(error);
+        warnings.push(`app discovery: ${message || "Cloudflare Analytics Engine query failed"}`);
+        return [];
+    });
     const sites = Array.from(new Set([...configuredSites, ...discoveredSites.map(([site]) => site)])).filter(Boolean);
     const siteId = sites.includes(requestedSite) ? requestedSite : sites[0] || requestedSite;
     const range = rangeFor(interval);
@@ -116,7 +121,6 @@ export async function getDashboardData(url: URL, env?: App.Platform["env"]): Pro
         };
     }
 
-    const warnings: string[] = [];
     const note = async <T>(label: string, fallback: T, task: Promise<T>): Promise<T> => {
         try {
             return await task;
