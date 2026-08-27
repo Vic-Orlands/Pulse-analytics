@@ -484,6 +484,46 @@ describe("AnalyticsEngineAPI", () => {
         });
     });
 
+    describe("getEvents", () => {
+        test("queries classified signals with copy payload and at most 10 grouped dimensions", async () => {
+            fetch.mockResolvedValue(
+                createFetchResponse({
+                    data: [
+                        {
+                            eventType: "copy",
+                            eventName: "Content copied",
+                            target: "/pricing · pre",
+                            value: "npm install pulse",
+                            path: "/pricing",
+                            country: "NG",
+                            region: "Lagos",
+                            city: "Lagos",
+                            deviceType: "desktop",
+                            operatingSystem: "macOS",
+                            count: 3,
+                            lastSeen: "2026-08-26 09:00:00",
+                            sessionDepth: 4,
+                        },
+                    ],
+                }),
+            );
+
+            const result = await api.getEvents("pulse.dev", "7d");
+            const sql = String((fetch as Mock).mock.calls[0][1].body);
+            const grouped = sql.match(/GROUP BY ([^\n]+)/i)?.[1] ?? "";
+            const groupedColumns = grouped.split(",").map((column) => column.trim()).filter(Boolean);
+
+            expect(groupedColumns).toHaveLength(10);
+            expect(sql).toContain("blob14 as value");
+            expect(sql).toContain("blob16 as region");
+            expect(sql).toContain("blob10 as deviceType");
+            expect(sql).toContain("AND blob11 IN ('screenshot', 'copy', 'scrape', 'interaction')");
+            expect(result[0].value).toBe("npm install pulse");
+            expect(result[0].region).toBe("Lagos");
+            expect(result[0].deviceType).toBe("desktop");
+        });
+    });
+
     describe("UTM query methods", () => {
         test("getCountByUtmSource should return visitor counts by UTM source", async () => {
             fetch.mockResolvedValue(

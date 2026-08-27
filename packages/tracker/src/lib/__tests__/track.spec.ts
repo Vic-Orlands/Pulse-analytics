@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
-import { trackPageview } from "../track";
+import { autoTrackEvents, trackPageview } from "../track";
 import * as requestModule from "../request";
 import { Client } from "../client";
 
@@ -655,5 +655,70 @@ describe("trackPageview", () => {
                 }),
             );
         });
+    });
+});
+
+describe("autoTrackEvents", () => {
+    const makeRequestMock = vi.fn();
+
+    beforeEach(() => {
+        vi.spyOn(requestModule, "makeRequest").mockImplementation(makeRequestMock);
+        makeRequestMock.mockReset();
+        Object.defineProperty(window, "location", {
+            writable: true,
+            value: {
+                pathname: "/docs/install",
+                search: "",
+                host: "example.com",
+                hostname: "example.com",
+            },
+        });
+        document.body.innerHTML = `<pre id="snippet">pnpm add @counterscale/tracker</pre>`;
+        vi.spyOn(window, "getSelection").mockReturnValue({
+            toString: () => "pnpm add @counterscale/tracker",
+        } as unknown as Selection);
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+        document.body.innerHTML = "";
+    });
+
+    test("records the copied text, page, and target surface", () => {
+        const client = new Client({
+            siteId: "test-site",
+            reporterUrl: "https://example.com/collect",
+            autoTrackPageviews: false,
+            reportOnLocalhost: true,
+        });
+        const stop = autoTrackEvents(client);
+        document.getElementById("snippet")?.dispatchEvent(new Event("copy", { bubbles: true }));
+
+        expect(makeRequestMock).toHaveBeenCalledWith(
+            "https://example.com/collect",
+            expect.objectContaining({
+                ev: "1",
+                et: "copy",
+                en: "Content copied",
+                val: "pnpm add @counterscale/tracker",
+                tg: "/docs/install · pre#snippet",
+                p: "/docs/install",
+            }),
+        );
+        stop();
+    });
+
+    test("does not record copy from password fields", () => {
+        document.body.innerHTML = `<input id="secret" type="password" value="hunter2" />`;
+        const client = new Client({
+            siteId: "test-site",
+            reporterUrl: "https://example.com/collect",
+            autoTrackPageviews: false,
+            reportOnLocalhost: true,
+        });
+        const stop = autoTrackEvents(client);
+        document.getElementById("secret")?.dispatchEvent(new Event("copy", { bubbles: true }));
+        expect(makeRequestMock).not.toHaveBeenCalled();
+        stop();
     });
 });

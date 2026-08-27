@@ -9,7 +9,14 @@
     let closeButton = $state<HTMLButtonElement>();
 
     const snippet = (site: string) => `<script id="counterscale-script" data-site-id="${site}" src="${origin}/tracker.js" defer><\/script>`;
-    const eventExample = ['window.counterscale.trackEvent({', '  type: "screenshot",', '  name: "report-exported",', '  target: "/reports/weekly"', '});'].join("\n");
+    const eventExample = [
+        "window.counterscale.trackEvent({",
+        '  type: "copy",',
+        '  name: "install-snippet",',
+        '  target: "/docs/install · pre",',
+        '  value: "pnpm add @counterscale/tracker"',
+        "});",
+    ].join("\n");
 
     async function copy(site: string) {
         await navigator.clipboard.writeText(snippet(site));

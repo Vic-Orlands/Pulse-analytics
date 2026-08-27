@@ -15,5 +15,11 @@ export default defineConfig({
             ],
         },
     },
+    resolve: {
+        alias: {
+            "~": new URL("./app", import.meta.url).pathname,
+            $lib: new URL("./src/lib", import.meta.url).pathname,
+        },
+    },
     plugins: [tsconfigPaths()],
 });

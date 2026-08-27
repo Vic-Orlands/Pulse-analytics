@@ -121,7 +121,7 @@ function extractParamsFromQueryString(requestUrl: string): {
 
     queryString.forEach((item) => {
         const kv = item.split("=");
-        if (kv[0]) params[kv[0]] = decodeURIComponent(kv[1]);
+        if (kv[0]) params[kv[0]] = decodeURIComponent((kv[1] || "").replace(/\+/g, " "));
     });
     return params;
 }
@@ -213,13 +213,15 @@ export function collectRequestHandler(
     if (typeof country === "string") {
         data.country = country;
     }
-    const region = extra?.region;
+    const region = extra?.region || extra?.regionCode;
     if (typeof region === "string") data.region = region;
     const city = extra?.city;
     if (typeof city === "string") data.city = city;
 
-    if (params.ev === "1" && env.WEB_EVENTS_AE) {
-        writeEventDataPoint(env.WEB_EVENTS_AE, data, params, maskNetwork(extra.network || ""));
+    if (params.ev === "1") {
+        if (env.WEB_EVENTS_AE) {
+            writeEventDataPoint(env.WEB_EVENTS_AE, data, params, maskNetwork(extra.network || extra.clientIp || ""));
+        }
     } else {
         writeDataPoint(env.WEB_COUNTER_AE, data);
     }

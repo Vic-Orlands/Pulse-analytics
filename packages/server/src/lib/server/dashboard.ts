@@ -1,6 +1,13 @@
 import dayjs from "dayjs";
 import { AnalyticsEngineAPI } from "~/analytics/query";
 import type { DashboardData } from "$lib/types";
+import {
+    formatHostLabel,
+    formatPathLabel,
+    formatReferrerLabel,
+    presentCountRows,
+    presentEvents,
+} from "./present";
 
 const intervals = new Set(["today", "yesterday", "1d", "7d", "14d", "30d", "90d"]);
 
@@ -87,9 +94,9 @@ export async function getDashboardData(url: URL, env?: App.Platform["env"]): Pro
             api.getSessionCount(siteId, interval, timezone).catch(() => 0),
             api.getViewsGroupedByInterval(siteId, range.type, range.start.toDate(), range.end.toDate(), timezone).catch(() => []),
             api.getViewsGroupedByInterval(siteId, range.type, previousRange.start.toDate(), previousRange.end.toDate(), timezone).catch(() => []),
-            api.getCountByPath(siteId, interval, timezone).catch(() => []),
-            api.getCountByHost(siteId, interval, timezone).catch(() => []),
-            api.getCountByReferrer(siteId, interval, timezone).catch(() => []),
+            api.getCountByPath(siteId, interval, timezone, {}, 1, 20).catch(() => []),
+            api.getCountByHost(siteId, interval, timezone, {}, 1, 20).catch(() => []),
+            api.getCountByReferrer(siteId, interval, timezone, {}, 1, 20).catch(() => []),
             api.getCountByCountry(siteId, interval, timezone).catch(() => []),
             api.getCountByRegion(siteId, interval, timezone).catch(() => []),
             api.getCountByBrowser(siteId, interval, timezone).catch(() => []),
@@ -122,49 +129,16 @@ export async function getDashboardData(url: URL, env?: App.Platform["env"]): Pro
             previousViews: previousSeriesRows[index]?.[1].views ?? 0,
             previousVisitors: previousSeriesRows[index]?.[1].visitors ?? 0,
         })),
-        pages,
-        routes: normalizeRoutes(pages),
-        hostnames,
-        referrers,
+        pages: presentCountRows(pages, formatPathLabel),
+        routes: presentCountRows(normalizeRoutes(pages), formatPathLabel),
+        hostnames: presentCountRows(hostnames, formatHostLabel),
+        referrers: presentCountRows(referrers, formatReferrerLabel),
         countries,
         regions,
         browsers,
         browserVersions,
         operatingSystems,
         devices,
-        events: eventRows.map((row, index) => {
-            const type = (["screenshot", "copy", "scrape", "interaction"].includes(row.eventType) ? row.eventType : "interaction") as DashboardData["events"][number]["type"];
-            const occurredAt = new Date(row.lastSeen).toISOString();
-            return {
-                id: `SIG-${String(index + 1).padStart(4, "0")}`,
-                type,
-                label: row.eventName || `${type} event`,
-                target: row.target || row.path || "/",
-                count: Number(row.count),
-                change: 0,
-                lastSeen: new Date(row.lastSeen).toLocaleString(),
-                occurredAt,
-                visitor: {
-                    id: row.visitorId,
-                    sessionId: row.sessionId,
-                    network: row.network,
-                    country: row.country,
-                    region: row.region,
-                    city: row.city,
-                    browser: row.browser,
-                    browserVersion: row.browserVersion,
-                    operatingSystem: row.operatingSystem,
-                    deviceType: row.deviceType,
-                    deviceModel: row.deviceModel,
-                    userAgent: row.userAgent,
-                    hostname: row.host,
-                    path: row.path,
-                    referrer: row.referrer,
-                    sessionDepth: Number(row.sessionDepth || 1),
-                    firstSeen: "Current retention window",
-                    lastSeen: new Date(row.lastSeen).toLocaleString(),
-                },
-            };
-        }),
+        events: presentEvents(eventRows),
     };
 }

@@ -22,6 +22,7 @@
     import TrafficChart from "$lib/components/TrafficChart.svelte";
     import AppRail from "$lib/components/AppRail.svelte";
     import InstallationSheet from "$lib/components/InstallationSheet.svelte";
+    import SurfaceList from "$lib/components/SurfaceList.svelte";
     import { applyTheme, defaultTheme, readTheme, saveTheme, type ThemeId } from "$lib/theme";
 
     let { data }: PageProps = $props();
@@ -96,7 +97,7 @@
 {#if choosing}
     <main class="welcome"><ThemeChooser selected={theme} onselect={chooseTheme} /></main>
 {:else}
-    <div class="dashboard text-xs [&_small]:!text-xs [&_dt]:!text-xs [&_p]:!text-xs [&_.kicker]:!text-xs [&_.journal-meta]:!text-xs [&_.utility-head]:!text-xs [&_.column-label]:!text-xs [&_.segmented_button]:!text-xs [&_.geography-grid_span]:!text-xs [&_.geography-grid_strong]:!text-xs [&_.rank-row]:!text-xs [&_.rank-row_span]:!text-xs [&_.rank-row_strong]:!text-xs [&_.simple-list]:!text-xs [&_.simple-list_strong]:!text-xs" data-theme={theme}>
+    <div class="dashboard text-xs [&_small]:!text-xs [&_dt]:!text-xs [&_p]:!text-xs [&_.kicker]:!text-xs [&_.journal-meta]:!text-xs [&_.utility-head]:!text-xs [&_.column-label]:!text-xs [&_.segmented_button]:!text-xs [&_.geography-grid_span]:!text-xs [&_.geography-grid_strong]:!text-xs [&_.simple-list]:!text-xs [&_.simple-list_strong]:!text-xs" data-theme={theme}>
         <AppRail {theme} current="dashboard" ontheme={toggleTheme} oninstall={() => (installationOpen = true)} />
         <div class="app-stage" class:sheet-open={installationOpen} inert={installationOpen ? true : undefined}>
             <header class="masthead">
@@ -208,19 +209,11 @@
                                 <button class:active={visitorView === "hostnames"} aria-pressed={visitorView === "hostnames"} onclick={() => (visitorView = "hostnames")}>Hosts</button>
                             </div>
                         </header>
-                        <div class="rank-list ruled-frame">
-                            {#each visitorRows.slice(0, 6) as row, index}
-                                <div class="rank-row"><span>{String(index + 1).padStart(2, "0")}</span><p>{row[0]}</p><i style={`--share:${Math.max(4, (row[1] / Math.max(visitorRows[0]?.[1] ?? 1, 1)) * 100)}%`}></i><strong>{formatNumber(row[1])}</strong></div>
-                            {:else}<p class="empty">No visitor paths in this period.</p>{/each}
-                        </div>
+                        <SurfaceList rows={visitorRows} empty={visitorView === "pages" ? "No entry pages in this period." : visitorView === "routes" ? "No route patterns in this period." : "No hostnames in this period."} />
                     </article>
                     <article class="list-section">
-                        <header class="section-head compact-head"><div><span class="kicker">[ Top Referrers ]</span><h2>Referral ingress</h2></div><span class="column-label">Visitors</span></header>
-                        <div class="rank-list ruled-frame">
-                            {#each data.referrers.slice(0, 6) as row, index}
-                                <div class="rank-row"><span>{String(index + 1).padStart(2, "0")}</span><p>{row[0]}</p><i style={`--share:${Math.max(4, (row[1] / Math.max(data.referrers[0]?.[1] ?? 1, 1)) * 100)}%`}></i><strong>{formatNumber(row[1])}</strong></div>
-                            {:else}<p class="empty">No referring sources in this period.</p>{/each}
-                        </div>
+                        <header class="section-head compact-head"><div><span class="kicker">[ Top Referrers ]</span><h2>Referral ingress</h2></div><span class="column-label">Visitors / views</span></header>
+                        <SurfaceList rows={data.referrers} empty="No referring sources in this period. Direct visits will appear as Direct." />
                     </article>
                 </section>
 
@@ -313,9 +306,6 @@
     .geography-grid h3 { margin: 28px 0 13px; font-size: 22px; }.geography-grid article div { display: flex; align-items: baseline; gap: 7px; }.geography-grid strong { font-family: "IBM Plex Mono", monospace; font-size: 10px; }.geography-grid small { color: var(--muted); font-size: 8px; text-transform: uppercase; }
     .geography-grid article > i { position: absolute; bottom: 0; left: 0; width: var(--share); height: 2px; background: var(--accent); transition: width 260ms ease-out; }
     .duet { display: grid; grid-template-columns: 1fr 1fr; gap: 58px; }.list-section, .tech-section { min-width: 0; }
-    .rank-row { position: relative; display: grid; grid-template-columns: 24px minmax(90px, 1fr) minmax(70px, .55fr) 44px; align-items: center; gap: 10px; min-height: 50px; padding: 0 16px; box-shadow: 0 1px var(--line); font-size: 10px; }.rank-row:last-child { box-shadow: none; }
-    .rank-row > span { color: var(--muted); font-family: "IBM Plex Mono", monospace; font-size: 8px; }.rank-row p { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }.rank-row > i { height: 2px; background: linear-gradient(90deg, var(--accent) var(--share), var(--line) var(--share)); }.rank-row strong { justify-self: end; font-family: "IBM Plex Mono", monospace; font-size: 9px; }
-    .empty { padding: 28px 16px; color: var(--muted); font-size: 10px; }
     .technology { display: grid; grid-template-columns: .9fr .8fr 1.15fr; gap: 42px; }
     .device-meter { display: flex; height: 17px; margin-bottom: 22px; background: color-mix(in srgb, var(--ink) 5%, transparent); }.device-meter > i { width: var(--share); }.device-0 { background: var(--accent); }.device-1 { background: var(--comparison); }.device-2 { background: color-mix(in srgb, var(--accent) 45%, var(--comparison)); }.device-3 { background: var(--muted); }
     .simple-list p { display: flex; min-height: 43px; align-items: center; justify-content: space-between; gap: 14px; padding: 0 14px; box-shadow: 0 1px var(--line); font-size: 10px; }.simple-list p:last-child { box-shadow: none; }.simple-list p > span { display: flex; align-items: center; gap: 8px; }.simple-list p > span i { width: 6px; height: 6px; }.simple-list strong { font-family: "IBM Plex Mono", monospace; font-size: 9px; }
