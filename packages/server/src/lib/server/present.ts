@@ -1,4 +1,5 @@
-import type { AnalyticsEvent, CountRow } from "$lib/types";
+import type { AnalyticsEvent, AnalyticsEventType, CountRow } from "$lib/types";
+import { ANALYTICS_EVENT_TYPES } from "$lib/types";
 
 export type EventQueryRow = {
     host?: string;
@@ -129,16 +130,20 @@ export function eventHeadline(type: AnalyticsEvent["type"], name: string, value:
         const snippet = copied.length > 96 ? `${copied.slice(0, 93)}…` : copied;
         return `Copied “${snippet}”`;
     }
+    if (type === "outbound" && copied) return `Left for ${copied}`;
+    if (type === "download" && copied) return `Downloaded ${copied}`;
     return (name || "").trim() || `${capitalize(type)} event`;
+}
+
+function asEventType(value: string): AnalyticsEventType {
+    return ANALYTICS_EVENT_TYPES.includes(value as AnalyticsEventType)
+        ? (value as AnalyticsEventType)
+        : "interaction";
 }
 
 export function presentEvents(rows: EventQueryRow[]): AnalyticsEvent[] {
     return rows.map((row, index) => {
-        const type = (
-            ["screenshot", "copy", "scrape", "interaction"].includes(row.eventType)
-                ? row.eventType
-                : "interaction"
-        ) as AnalyticsEvent["type"];
+        const type = asEventType(row.eventType);
         const occurredAtDate = new Date(row.lastSeen);
         const occurredAt = Number.isNaN(occurredAtDate.getTime())
             ? new Date().toISOString()

@@ -45,6 +45,30 @@ describe("collectRequestHandler events", () => {
         expect(datapoint.blobs[16]).toBe("Ikeja");
     });
 
+    test("writes outbound and download events with destination values", () => {
+        const env = {
+            WEB_COUNTER_AE: { writeDataPoint: vi.fn() } as AnalyticsEngineDataset,
+            WEB_EVENTS_AE: { writeDataPoint: vi.fn() } as AnalyticsEngineDataset,
+        } as Env;
+
+        collectRequestHandler(
+            requestWith({
+                sid: "example",
+                h: "example.com",
+                p: "/pricing",
+                ev: "1",
+                et: "outbound",
+                en: "Outbound click",
+                val: "https://github.com/Vic-Orlands/Pulse-analytics",
+            }) as unknown as Request,
+            env,
+        );
+
+        const datapoint = (env.WEB_EVENTS_AE.writeDataPoint as ReturnType<typeof vi.fn>).mock.calls[0][0];
+        expect(datapoint.blobs[10]).toBe("outbound");
+        expect(datapoint.blobs[13]).toBe("https://github.com/Vic-Orlands/Pulse-analytics");
+    });
+
     test("does not record events as pageviews when the events dataset is missing", () => {
         const env = {
             WEB_COUNTER_AE: { writeDataPoint: vi.fn() } as AnalyticsEngineDataset,

@@ -35,18 +35,24 @@ pnpm wrangler secret put DASHBOARD_PASSWORD
 pnpm run deploy
 ```
 
-The deployed Worker serves both the dashboard and tracker. Add this to each site:
+The deployed Worker serves both the dashboard and tracker. Add this sample to any application shell (not a list of apps already in Pulse):
 
 ```html
 <script
     id="counterscale-script"
-    data-site-id="your-site-id"
-    src="https://your-worker.workers.dev/tracker.js"
+    data-site-id="your-app"
+    src="https://your-worker.workers.dev/tracker.js?v=3.5.0"
     defer
 ></script>
 ```
 
-Use a stable, unique `data-site-id` per application. Connected applications are discovered from live Analytics Engine data.
+Use a stable `data-site-id` per product. If you omit it, Pulse uses the hostname. The first pageview creates the app in the dashboard automatically. Framework-specific placement:
+
+- **Next.js App Router:** `app/layout.tsx` with `next/script` (`strategy="afterInteractive"`)
+- **React / Vite:** `index.html` before `</body>`
+- **SvelteKit:** `src/app.html` before `</body>`
+- **Solid / Vue:** `index.html` before `</body>`
+- **Astro:** the base layout, with `is:inline` so it is not bundled
 
 ## Privacy
 

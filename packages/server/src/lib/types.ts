@@ -8,9 +8,20 @@ export type TrafficPoint = {
     previousVisitors: number;
 };
 
+export const ANALYTICS_EVENT_TYPES = [
+    "screenshot",
+    "copy",
+    "scrape",
+    "interaction",
+    "outbound",
+    "download",
+] as const;
+
+export type AnalyticsEventType = (typeof ANALYTICS_EVENT_TYPES)[number];
+
 export type AnalyticsEvent = {
     id: string;
-    type: "screenshot" | "copy" | "scrape" | "interaction";
+    type: AnalyticsEventType;
     label: string;
     target: string;
     detail: string;
@@ -42,6 +53,45 @@ export type AnalyticsEvent = {
     };
 };
 
+export type InsightJourney = {
+    path: string;
+    steps: string[];
+    entry: string;
+    exit: string;
+    bounced: boolean;
+    count: number;
+};
+
+export type LiveSnapshot = {
+    visitors: number;
+    pages: CountRow[];
+};
+
+export type CopySnippet = {
+    snippet: string;
+    path: string;
+    count: number;
+};
+
+export type FunnelStep = {
+    label: string;
+    count: number;
+    rate: number;
+};
+
+export type AnalyticsAlert = {
+    id: string;
+    severity: "info" | "warning" | "critical";
+    title: string;
+    detail: string;
+    count: number;
+};
+
+export type CohortSplit = {
+    newVisitors: number;
+    returningVisitors: number;
+};
+
 export type DashboardData = {
     source: "live" | "unavailable";
     siteId: string;
@@ -69,5 +119,19 @@ export type DashboardData = {
     operatingSystems: CountRow[];
     devices: CountRow[];
     events: AnalyticsEvent[];
+    live: LiveSnapshot;
+    journeys: InsightJourney[];
+    entries: CountRow[];
+    exits: CountRow[];
+    utmSources: CountRow[];
+    utmMediums: CountRow[];
+    utmCampaigns: CountRow[];
+    copies: CopySnippet[];
+    outbound: CountRow[];
+    downloads: CountRow[];
+    funnel: FunnelStep[];
+    bounceByLanding: CountRow[];
+    alerts: AnalyticsAlert[];
+    cohorts: CohortSplit;
     warnings: string[];
 };

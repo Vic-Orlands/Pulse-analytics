@@ -66,6 +66,7 @@ describe("signal presentation", () => {
     test("builds origin and device fallbacks", () => {
         expect(originLabel("US", "California", "San Francisco")).toBe("San Francisco, California, United States");
         expect(deviceLabel("mobile", "iOS", "")).toBe("Mobile · iOS");
-        expect(eventHeadline("copy", "Content copied", "")).toBe("Content copied");
+        expect(eventHeadline("outbound", "Outbound click", "https://example.com")).toBe("Left for https://example.com");
+        expect(eventHeadline("download", "File download", "/pricing.pdf")).toBe("Downloaded /pricing.pdf");
     });
 });

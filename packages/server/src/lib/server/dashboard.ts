@@ -8,6 +8,18 @@ import {
     presentCountRows,
     presentEvents,
 } from "./present";
+import {
+    countEventType,
+    emptyInsights,
+    presentAlerts,
+    presentCohorts,
+    presentCopySnippets,
+    presentFunnel,
+    presentLinkRows,
+    presentLiveVisitors,
+    presentSessionInsights,
+    uniqueSessionCount,
+} from "./insights";
 
 const intervals = new Set(["today", "yesterday", "1d", "7d", "14d", "30d", "90d"]);
 
@@ -51,7 +63,14 @@ function rangeFor(interval: string) {
     };
 }
 
-function unavailable(siteId: string, interval: string, sites: string[]): DashboardData {
+function utmRows(rows: [string, number][]) {
+    return presentCountRows(
+        rows.map(([label, visitors]) => [label || "(none)", visitors, visitors]),
+        (label) => label || "(none)",
+    );
+}
+
+function unavailable(siteId: string, interval: string, sites: string[], warning?: string): DashboardData {
     return {
         source: "unavailable",
         siteId,
@@ -60,7 +79,8 @@ function unavailable(siteId: string, interval: string, sites: string[]): Dashboa
         generatedAt: new Date().toISOString(),
         stats: { views: 0, visitors: 0, sessions: 0, bounces: 0, bounceRate: 0, pagesPerVisit: 0, previousVisitors: 0 },
         series: [], pages: [], routes: [], hostnames: [], referrers: [], countries: [], regions: [], browsers: [], browserVersions: [], operatingSystems: [], devices: [], events: [],
-        warnings: ["Cloudflare Analytics Engine credentials are not configured on this Worker."],
+        ...emptyInsights(),
+        warnings: warning ? [warning] : ["Cloudflare Analytics Engine credentials are not configured on this Worker."],
     };
 }
 
@@ -89,6 +109,13 @@ export async function getDashboardData(url: URL, env?: App.Platform["env"]): Pro
     };
     const timezone = "Africa/Lagos";
 
+    if (!siteId) {
+        return {
+            ...unavailable("", interval, [], "Install the tracking snippet in any app. The first pageview creates it here automatically."),
+            source: "live",
+        };
+    }
+
     const warnings: string[] = [];
     const note = async <T>(label: string, fallback: T, task: Promise<T>): Promise<T> => {
         try {
@@ -101,7 +128,33 @@ export async function getDashboardData(url: URL, env?: App.Platform["env"]): Pro
         }
     };
 
-    const [counts, sessionCount, seriesRows, previousSeriesRows, pages, hostnames, referrers, countries, regions, browsers, browserVersions, operatingSystems, devices, eventRows] =
+    const [
+        counts,
+        sessionCount,
+        seriesRows,
+        previousSeriesRows,
+        pages,
+        hostnames,
+        referrers,
+        countries,
+        regions,
+        browsers,
+        browserVersions,
+        operatingSystems,
+        devices,
+        eventRows,
+        sessionPaths,
+        liveRows,
+        copyRows,
+        outboundRows,
+        downloadRows,
+        eventTypeCounts,
+        convertedSessions,
+        utmSources,
+        utmMediums,
+        utmCampaigns,
+        visitorCohorts,
+    ] =
         await Promise.all([
             note("counts", { views: 0, visitors: 0, bounces: 0 }, api.getCounts(siteId, interval, timezone)),
             note("sessions", 0, api.getSessionCount(siteId, interval, timezone)),
@@ -117,12 +170,41 @@ export async function getDashboardData(url: URL, env?: App.Platform["env"]): Pro
             note("operating-systems", [], api.getCountByOperatingSystem(siteId, interval, timezone)),
             note("devices", [], api.getCountByDeviceType(siteId, interval, timezone)),
             note("events", [], api.getEvents(siteId, interval, timezone)),
+            note("journeys", [], api.getSessionPaths(siteId, interval, timezone)),
+            note("live", [], api.getLiveActivity(siteId)),
+            note("copies", [], api.getEventValues(siteId, interval, "copy", timezone)),
+            note("outbound", [], api.getEventValues(siteId, interval, "outbound", timezone)),
+            note("downloads", [], api.getEventValues(siteId, interval, "download", timezone)),
+            note("event-types", [], api.getEventTypeCounts(siteId, interval, timezone)),
+            note("converted-sessions", [], api.getConvertedSessions(siteId, interval, timezone)),
+            note("utm-source", [], api.getCountByUtmSource(siteId, interval, timezone)),
+            note("utm-medium", [], api.getCountByUtmMedium(siteId, interval, timezone)),
+            note("utm-campaign", [], api.getCountByUtmCampaign(siteId, interval, timezone)),
+            note("cohorts", [], api.getVisitorCohorts(siteId)),
         ]);
 
     const sessions = sessionCount || counts.visitors;
     const bounceRate = sessions > 0 ? Math.max(0, counts.bounces / sessions) * 100 : 0;
     const previousVisitors = previousSeriesRows.reduce((sum, [, point]) => sum + point.visitors, 0);
     const labeledPages = presentCountRows(pages, formatPathLabel);
+    const sessionInsights = presentSessionInsights(sessionPaths);
+    const live = presentLiveVisitors(liveRows);
+    const copies = presentCopySnippets(copyRows);
+    const outbound = presentLinkRows(outboundRows);
+    const downloads = presentLinkRows(downloadRows);
+    const cohorts = presentCohorts(visitorCohorts, range.start.toDate(), range.end.toDate());
+    const funnel = presentFunnel({
+        sessions,
+        engagedSessions: sessionInsights.engagedSessions,
+        convertedSessions: uniqueSessionCount(convertedSessions),
+    });
+    const alerts = presentAlerts({
+        scrapeCount: countEventType(eventTypeCounts, "scrape"),
+        copies,
+        liveVisitors: live.visitors,
+        bounceRate,
+        sessions,
+    });
 
     if (counts.views > 0 && labeledPages.length === 0) {
         warnings.push("Pageviews were recorded, but the pages query returned no rows.");
@@ -164,6 +246,20 @@ export async function getDashboardData(url: URL, env?: App.Platform["env"]): Pro
         operatingSystems,
         devices,
         events: presentEvents(eventRows),
+        live,
+        journeys: sessionInsights.journeys,
+        entries: sessionInsights.entries,
+        exits: sessionInsights.exits,
+        utmSources: utmRows(utmSources),
+        utmMediums: utmRows(utmMediums),
+        utmCampaigns: utmRows(utmCampaigns),
+        copies,
+        outbound,
+        downloads,
+        funnel,
+        bounceByLanding: sessionInsights.bounceByLanding,
+        alerts,
+        cohorts,
         warnings,
     };
 }

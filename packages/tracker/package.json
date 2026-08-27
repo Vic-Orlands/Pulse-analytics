@@ -1,6 +1,6 @@
 {
     "name": "@counterscale/tracker",
-    "version": "3.4.1",
+    "version": "3.5.0",
     "descriptrion": "Pulse Analytics tracking library for recording pageviews and events",
     "homepage": "https://github.com/Vic-Orlands/Pulse-analytics",
     "license": "MIT",

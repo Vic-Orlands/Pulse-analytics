@@ -530,10 +530,39 @@ describe("AnalyticsEngineAPI", () => {
             expect(sql).toContain("AND timestamp < NOW()");
             expect(sql).toContain("index1 = 'pulse.dev'");
             expect(sql).toContain("argMax(blob6, timestamp) as browser");
-            expect(sql).toContain("AND blob11 IN ('screenshot', 'copy', 'scrape', 'interaction')");
+            expect(sql).toContain("AND blob11 IN ('screenshot', 'copy', 'scrape', 'interaction', 'outbound', 'download')");
             expect(result[0].value).toBe("npm install pulse");
             expect(result[0].region).toBe("Lagos");
             expect(result[0].deviceType).toBe("desktop");
+        });
+
+        test("loads session paths grouped by session and page", async () => {
+            fetch.mockResolvedValue(
+                createFetchResponse({
+                    data: [
+                        { sessionId: "s1", path: "/", firstSeen: "2026-08-27 10:00:00", hits: 1 },
+                    ],
+                }),
+            );
+
+            const result = await api.getSessionPaths("pulse.dev", "7d");
+            const sql = String((fetch as Mock).mock.calls[0][1].body);
+            expect(sql).toContain("GROUP BY blob20, blob3");
+            expect(sql).toContain("blob20 as sessionId");
+            expect(result[0].path).toBe("/");
+        });
+
+        test("loads live visitors from the last five minutes", async () => {
+            fetch.mockResolvedValue(
+                createFetchResponse({
+                    data: [{ sessionId: "s1", path: "/docs", country: "NG", lastSeen: "2026-08-27 10:00:00" }],
+                }),
+            );
+
+            const result = await api.getLiveActivity("pulse.dev");
+            const sql = String((fetch as Mock).mock.calls[0][1].body);
+            expect(sql).toContain("NOW() - INTERVAL '5' MINUTE");
+            expect(result[0].path).toBe("/docs");
         });
 
         test("falls back to metricsDataset when eventsDataset is missing", async () => {

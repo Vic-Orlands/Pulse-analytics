@@ -671,6 +671,8 @@ describe("autoTrackEvents", () => {
                 search: "",
                 host: "example.com",
                 hostname: "example.com",
+                origin: "https://example.com",
+                href: "https://example.com/docs/install",
             },
         });
         document.body.innerHTML = `<pre id="snippet">pnpm add @counterscale/tracker</pre>`;
@@ -740,6 +742,73 @@ describe("autoTrackEvents", () => {
         });
         const stop = autoTrackEvents(client);
         document.getElementById("secret")?.dispatchEvent(new Event("copy", { bubbles: true }));
+        expect(makeRequestMock).not.toHaveBeenCalled();
+        stop();
+    });
+
+    test("records outbound clicks to other origins", () => {
+        document.body.innerHTML = `<a id="out" href="https://github.com/Vic-Orlands/Pulse-analytics">GitHub</a>`;
+        const client = new Client({
+            siteId: "test-site",
+            reporterUrl: "https://example.com/collect",
+            autoTrackPageviews: false,
+            reportOnLocalhost: true,
+        });
+        const stop = autoTrackEvents(client);
+        const outbound = document.getElementById("out");
+        const click = new MouseEvent("click", { bubbles: true, cancelable: true });
+        click.preventDefault();
+        outbound?.dispatchEvent(click);
+        expect(makeRequestMock).toHaveBeenCalledWith(
+            "https://example.com/collect",
+            expect.objectContaining({
+                ev: "1",
+                et: "outbound",
+                en: "Outbound click",
+                val: "https://github.com/Vic-Orlands/Pulse-analytics",
+            }),
+        );
+        stop();
+    });
+
+    test("records file downloads from href extensions and download attributes", () => {
+        document.body.innerHTML = `<a id="file" href="/pricing.pdf">Pricing</a>`;
+        const client = new Client({
+            siteId: "test-site",
+            reporterUrl: "https://example.com/collect",
+            autoTrackPageviews: false,
+            reportOnLocalhost: true,
+        });
+        const stop = autoTrackEvents(client);
+        const file = document.getElementById("file");
+        const click = new MouseEvent("click", { bubbles: true, cancelable: true });
+        click.preventDefault();
+        file?.dispatchEvent(click);
+        expect(makeRequestMock).toHaveBeenCalledWith(
+            "https://example.com/collect",
+            expect.objectContaining({
+                ev: "1",
+                et: "download",
+                en: "File download",
+                val: "https://example.com/pricing.pdf",
+            }),
+        );
+        stop();
+    });
+
+    test("does not record same-origin navigation as outbound", () => {
+        document.body.innerHTML = `<a id="in" href="/docs">Docs</a>`;
+        const client = new Client({
+            siteId: "test-site",
+            reporterUrl: "https://example.com/collect",
+            autoTrackPageviews: false,
+            reportOnLocalhost: true,
+        });
+        const stop = autoTrackEvents(client);
+        const inbound = document.getElementById("in");
+        const click = new MouseEvent("click", { bubbles: true, cancelable: true });
+        click.preventDefault();
+        inbound?.dispatchEvent(click);
         expect(makeRequestMock).not.toHaveBeenCalled();
         stop();
     });

@@ -15,12 +15,65 @@ export type TrackPageviewOpts = {
     referrer?: string;
 };
 
+export const TRACK_EVENT_TYPES = [
+    "screenshot",
+    "copy",
+    "scrape",
+    "interaction",
+    "outbound",
+    "download",
+] as const;
+
+export type TrackEventType = (typeof TRACK_EVENT_TYPES)[number];
+
 export type TrackEventOpts = {
-    type: "screenshot" | "copy" | "scrape" | "interaction";
+    type: TrackEventType;
     name: string;
     target?: string;
     value?: string;
 };
+
+const DOWNLOAD_EXTENSION =
+    /\.(pdf|zip|gz|tgz|rar|7z|csv|xlsx?|docx?|pptx?|mp4|mp3|wav|mov|dmg|exe|apk|iso)(\?|#|$)/i;
+
+function isTrackEventType(value: string | undefined): value is TrackEventType {
+    return TRACK_EVENT_TYPES.includes(value as TrackEventType);
+}
+
+function clickedAnchor(event: Event): HTMLAnchorElement | null {
+    const element = event.target instanceof Element ? event.target.closest("a") : null;
+    return element instanceof HTMLAnchorElement ? element : null;
+}
+
+function classifyLink(anchor: HTMLAnchorElement): { type: "download" | "outbound"; href: string } | null {
+    const raw = anchor.getAttribute("href") || "";
+    if (!raw || /^(javascript:|#|mailto:|tel:)/i.test(raw.trim())) return null;
+
+    let href = raw;
+    try {
+        href = new URL(raw, window.location.href).href;
+    } catch {
+        href = raw;
+    }
+
+    if (anchor.hasAttribute("download") || DOWNLOAD_EXTENSION.test(raw) || DOWNLOAD_EXTENSION.test(href)) {
+        return { type: "download", href };
+    }
+
+    try {
+        const url = new URL(href);
+        if (
+            url.origin !== window.location.origin &&
+            (url.protocol === "http:" || url.protocol === "https:")
+        ) {
+            return { type: "outbound", href: url.href };
+        }
+    } catch {
+        return null;
+    }
+
+    return null;
+}
 
 function currentContext() {
     const location = window.location;
@@ -91,10 +144,28 @@ export function autoTrackEvents(client: Client) {
     };
     const onClick = (event: MouseEvent) => {
         const element = event.target instanceof Element ? event.target.closest<HTMLElement>("[data-counterscale-event]") : null;
-        if (!element) return;
-        const type = element.dataset.counterscaleEvent as TrackEventOpts["type"];
-        if (!["screenshot", "copy", "scrape", "interaction"].includes(type)) return;
-        trackEvent(client, { type, name: element.dataset.counterscaleEventName || element.textContent?.trim() || "Interaction", target: element.dataset.counterscaleEventTarget || window.location.pathname, value: element.dataset.counterscaleEventValue });
+        if (element) {
+            const type = element.dataset.counterscaleEvent;
+            if (!isTrackEventType(type)) return;
+            trackEvent(client, {
+                type,
+                name: element.dataset.counterscaleEventName || element.textContent?.trim() || "Interaction",
+                target: element.dataset.counterscaleEventTarget || window.location.pathname,
+                value: element.dataset.counterscaleEventValue,
+            });
+            return;
+        }
+
+        const anchor = clickedAnchor(event);
+        if (!anchor) return;
+        const classified = classifyLink(anchor);
+        if (!classified) return;
+        trackEvent(client, {
+            type: classified.type,
+            name: classified.type === "download" ? "File download" : "Outbound click",
+            target: window.location.pathname || "/",
+            value: classified.href,
+        });
     };
     const onKeyUp = (event: KeyboardEvent) => {
         if (event.key !== "PrintScreen") return;
