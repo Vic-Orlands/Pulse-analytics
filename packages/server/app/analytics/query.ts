@@ -216,13 +216,16 @@ export class AnalyticsEngineAPI {
             release = resolve;
         });
 
-        await previous;
-        const wait = Math.max(0, this.nextQueryAt - Date.now());
-        if (wait > 0) {
-            await new Promise((resolve) => setTimeout(resolve, wait));
+        try {
+            await previous;
+            const wait = Math.max(0, this.nextQueryAt - Date.now());
+            if (wait > 0) {
+                await new Promise((resolve) => setTimeout(resolve, wait));
+            }
+            this.nextQueryAt = Date.now() + AnalyticsEngineAPI.queryIntervalMs;
+        } finally {
+            release();
         }
-        this.nextQueryAt = Date.now() + AnalyticsEngineAPI.queryIntervalMs;
-        release();
     }
 
     private retryDelay(response: Response, attempt: number) {
@@ -298,6 +301,16 @@ export class AnalyticsEngineAPI {
         return {
             data: ((parsed as AnalyticsQueryResult<T>).data || []) as T[],
         };
+    }
+
+    private async requireQueryData<T extends Record<string, string | number>>(
+        query: string,
+    ): Promise<T[]> {
+        const result = await this.querySql<T>(query);
+        if (result.error) {
+            throw new Error(result.error);
+        }
+        return result.data;
     }
 
     private siteClause(siteId: string): string {
@@ -572,75 +585,54 @@ export class AnalyticsEngineAPI {
             isBounce: number;
         };
 
-        const queryResult = this.query(query);
-        const returnPromise = new Promise<[string, AnalyticsCountResult][]>(
-            (resolve, reject) =>
-                (async () => {
-                    const response = await queryResult;
+        const rows = await this.requireQueryData<SelectionSet>(query);
 
-                    if (!response.ok) {
-                        reject(response.statusText);
+        // note this query will return sparse data (i.e. only rows where count > 0)
+        // merge returnedRows with initial rows to fill in any gaps
+        const rowsByDateTime = rows.reduce((accum, row) => {
+            const utcDateTime = new Date(row["bucket"]);
+            const key = dayjs(utcDateTime).format("YYYY-MM-DD HH:mm:ss");
+            if (!Object.hasOwn(accum, key)) {
+                accum[key] = {
+                    views: 0,
+                    visitors: 0,
+                    bounces: 0,
+                };
+            }
+            accumulateCountsFromRowResult(accum[key], row);
+
+            return accum;
+        }, initialRows);
+
+        // return as sorted array of tuples (i.e. [datetime, count])
+        const sortedRows = Object.entries(rowsByDateTime).sort((a, b) => {
+            if (a[0] < b[0]) return -1;
+            else if (a[0] > b[0]) return 1;
+            else return 0;
+        });
+
+        // Fix negative bounce values coming from sparse values.
+        //
+        // If data is sparse, it's possible to have a bucket where a negative bounce value. This is because
+        // the initial "bounce" occurred in an earlier bucket. We need to go "back in time" and amend
+        // that bucket. Otherwise chart will show -100% bounce rate which makes no sense.
+        // (NOTE: The buckets must be sorted)
+        for (let i = 1; i < sortedRows.length; i++) {
+            const current = sortedRows[i][1];
+            // if the current value of bounces is negative, find the last non-zero bucket and decrement
+            if (current.bounces < 0) {
+                for (let j = i - 1; j >= 0; j--) {
+                    const prev = sortedRows[j][1];
+                    if (prev.bounces > 0) {
+                        prev.bounces += current.bounces;
+                        current.bounces = 0; // zero-out current bucket
+                        break;
                     }
+                }
+            }
+        }
 
-                    const responseData =
-                        (await response.json()) as AnalyticsQueryResult<SelectionSet>;
-
-                    // note this query will return sparse data (i.e. only rows where count > 0)
-                    // merge returnedRows with initial rows to fill in any gaps
-                    const rowsByDateTime = responseData.data.reduce(
-                        (accum, row) => {
-                            const utcDateTime = new Date(row["bucket"]);
-                            const key = dayjs(utcDateTime).format(
-                                "YYYY-MM-DD HH:mm:ss",
-                            );
-                            if (!Object.hasOwn(accum, key)) {
-                                accum[key] = {
-                                    views: 0,
-                                    visitors: 0,
-                                    bounces: 0,
-                                };
-                            }
-                            accumulateCountsFromRowResult(accum[key], row);
-
-                            return accum;
-                        },
-                        initialRows,
-                    );
-
-                    // return as sorted array of tuples (i.e. [datetime, count])
-                    const sortedRows = Object.entries(rowsByDateTime).sort(
-                        (a, b) => {
-                            if (a[0] < b[0]) return -1;
-                            else if (a[0] > b[0]) return 1;
-                            else return 0;
-                        },
-                    );
-
-                    // Fix negative bounce values coming from sparse values.
-                    //
-                    // If data is sparse, it's possible to have a bucket where a negative bounce value. This is because
-                    // the initial "bounce" occurred in an earlier bucket. We need to go "back in time" and amend
-                    // that bucket. Otherwise chart will show -100% bounce rate which makes no sense.
-                    // (NOTE: The buckets must be sorted)
-                    for (let i = 1; i < sortedRows.length; i++) {
-                        const current = sortedRows[i][1];
-                        // if the current value of bounces is negative, find the last non-zero bucket and decrement
-                        if (current.bounces < 0) {
-                            for (let j = i - 1; j >= 0; j--) {
-                                const prev = sortedRows[j][1];
-                                if (prev.bounces > 0) {
-                                    prev.bounces += current.bounces;
-                                    current.bounces = 0; // zero-out current bucket
-                                    break;
-                                }
-                            }
-                        }
-                    }
-
-                    resolve(sortedRows);
-                })(),
-        );
-        return returnPromise;
+        return sortedRows;
     }
 
     async getCounts(
@@ -676,36 +668,19 @@ export class AnalyticsEngineAPI {
             isBounce: number;
         };
 
-        const queryResult = this.query(query);
+        const rows = await this.requireQueryData<SelectionSet>(query);
+        const counts: AnalyticsCountResult = {
+            views: 0,
+            visitors: 0,
+            bounces: 0,
+        };
 
-        const returnPromise = new Promise<AnalyticsCountResult>(
-            (resolve, reject) =>
-                (async () => {
-                    const response = await queryResult;
-
-                    if (!response.ok) {
-                        reject(response.statusText);
-                    }
-
-                    const responseData =
-                        (await response.json()) as AnalyticsQueryResult<SelectionSet>;
-
-                    const counts: AnalyticsCountResult = {
-                        views: 0,
-                        visitors: 0,
-                        bounces: 0,
-                    };
-
-                    // NOTE: note it's possible to get no results, or half results (i.e. a row where isVisit=1 but
-                    //       no row where isVisit=0), so this code makes no assumption on number of results
-                    responseData.data.forEach((row) => {
-                        accumulateCountsFromRowResult(counts, row);
-                    });
-                    resolve(counts);
-                })(),
-        );
-
-        return returnPromise;
+        // NOTE: note it's possible to get no results, or half results (i.e. a row where isVisit=1 but
+        //       no row where isVisit=0), so this code makes no assumption on number of results
+        for (const row of rows) {
+            accumulateCountsFromRowResult(counts, row);
+        }
+        return counts;
     }
 
     async getVisitorCountByColumn<T extends keyof typeof ColumnMappings>(
@@ -743,36 +718,17 @@ export class AnalyticsEngineAPI {
             ColumnMappingToType<(typeof ColumnMappings)[T]>
         >;
 
-        const queryResult = this.query(query);
-        const returnPromise = new Promise<
-            [ColumnMappingToType<typeof _column>, number][]
-        >((resolve, reject) =>
-            (async () => {
-                const response = await queryResult;
+        const rows = await this.requireQueryData<SelectionSet>(query);
 
-                if (!response.ok) {
-                    reject(response.statusText);
-                }
-
-                const responseData =
-                    (await response.json()) as AnalyticsQueryResult<SelectionSet>;
-
-                // since CF AE doesn't support OFFSET clauses, we select up to LIMIT and
-                // then slice that into the individual requested page
-                const pageData = responseData.data.slice(
-                    limit * (page - 1),
-                    limit * page,
-                );
-
-                resolve(
-                    pageData.map((row) => {
-                        const key = row[_column];
-                        return [key, Number(row["count"])] as const;
-                    }),
-                );
-            })(),
-        );
-        return returnPromise;
+        // since CF AE doesn't support OFFSET clauses, we select up to LIMIT and
+        // then slice that into the individual requested page
+        return rows.slice(limit * (page - 1), limit * page).map((row) => {
+            const key = row[_column];
+            return [key, Number(row["count"])] as [
+                ColumnMappingToType<typeof _column>,
+                number,
+            ];
+        });
     }
 
     async getAllCountsByAllColumnsForAllSites(
@@ -830,7 +786,7 @@ export class AnalyticsEngineAPI {
             const responseData =
                 (await response.json()) as AnalyticsQueryResult<SelectionSet>;
 
-            return responseData.data.reduce((acc, row) => {
+            return (responseData.data || []).reduce((acc, row) => {
                 // key is the comma joined string of siteId + all columns
                 const key = [
                     row.date,
@@ -1049,12 +1005,8 @@ export class AnalyticsEngineAPI {
             WHERE timestamp >= ${startIntervalSql} AND timestamp < ${endIntervalSql}
                 AND ${ColumnMappings.siteId} = '${siteId}'
                 ${filterStr}`;
-        const response = await this.query(query);
-        if (!response.ok) throw new Error(response.statusText);
-        const result = (await response.json()) as AnalyticsQueryResult<{
-            sessions: number;
-        }>;
-        return Number(result.data[0]?.sessions || 0);
+        const rows = await this.requireQueryData<{ sessions: number }>(query);
+        return Number(rows[0]?.sessions || 0);
     }
 
     async getCountByReferrer(
@@ -1266,31 +1218,8 @@ export class AnalyticsEngineAPI {
             siteId: string;
         };
 
-        const queryResult = this.query(query);
-        const returnPromise = new Promise<[string, number][]>(
-            (resolve, reject) =>
-                (async () => {
-                    const response = await queryResult;
-
-                    if (!response.ok) {
-                        reject(response.statusText);
-                        return;
-                    }
-
-                    const responseData =
-                        (await response.json()) as AnalyticsQueryResult<SelectionSet>;
-                    const result = responseData.data.reduce(
-                        (acc, cur) => {
-                            acc.push([cur["siteId"], cur["count"]]);
-                            return acc;
-                        },
-                        [] as [string, number][],
-                    );
-
-                    resolve(result);
-                })(),
-        );
-        return returnPromise;
+        const rows = await this.requireQueryData<SelectionSet>(query);
+        return rows.map((row) => [row.siteId, row.count] as [string, number]);
     }
 
     async getEarliestEvents(siteId: string): Promise<{
@@ -1310,43 +1239,17 @@ export class AnalyticsEngineAPI {
             earliestEvent: string;
             isBounce: number;
         };
-        const queryResult = this.query(query);
-        const returnPromise = new Promise<{
-            earliestEvent: Date | null;
-            earliestBounce: Date | null;
-        }>((resolve, reject) => {
-            (async () => {
-                const response = await queryResult;
+        const data = await this.requireQueryData<SelectionSet>(query);
+        const earliestEvent = data.find(
+            (row) => row["isBounce"] === 0,
+        )?.earliestEvent;
+        const earliestBounce = data.find(
+            (row) => row["isBounce"] === 1,
+        )?.earliestEvent;
 
-                if (!response.ok) {
-                    reject(response.statusText);
-                    return;
-                }
-
-                const responseData =
-                    (await response.json()) as AnalyticsQueryResult<SelectionSet>;
-
-                const data = responseData.data;
-
-                const earliestEvent = data.find(
-                    (row) => row["isBounce"] === 0,
-                )?.earliestEvent;
-
-                const earliestBounce = data.find(
-                    (row) => row["isBounce"] === 1,
-                )?.earliestEvent;
-
-                resolve({
-                    earliestEvent: earliestEvent
-                        ? new Date(earliestEvent)
-                        : null,
-                    earliestBounce: earliestBounce
-                        ? new Date(earliestBounce)
-                        : null,
-                });
-            })();
-        });
-
-        return returnPromise;
+        return {
+            earliestEvent: earliestEvent ? new Date(earliestEvent) : null,
+            earliestBounce: earliestBounce ? new Date(earliestBounce) : null,
+        };
     }
 }

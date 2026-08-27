@@ -311,6 +311,44 @@ describe("AnalyticsEngineAPI", () => {
                 bounces: 2,
             });
         });
+
+        test("failed Analytics Engine responses reject instead of hanging", async () => {
+            const unhandled: unknown[] = [];
+            const onUnhandled = (reason: unknown) => {
+                unhandled.push(reason);
+            };
+            process.on("unhandledRejection", onUnhandled);
+
+            fetch.mockResolvedValue({
+                ok: false,
+                status: 400,
+                statusText: "Bad Request",
+                json: async () => ({ error: "limit exceeded" }),
+                text: async () => JSON.stringify({ error: "limit exceeded" }),
+            });
+
+            try {
+                await expect(api.getCounts("example.com", "7d")).rejects.toThrow(
+                    "limit exceeded",
+                );
+                await expect(
+                    api.getVisitorCountByColumn("example.com", "country", "7d"),
+                ).rejects.toThrow("limit exceeded");
+                await expect(
+                    api.getViewsGroupedByInterval(
+                        "example.com",
+                        "DAY",
+                        new Date("2024-01-11 00:00:00"),
+                        new Date("2024-01-12 00:00:00"),
+                        "America/New_York",
+                    ),
+                ).rejects.toThrow("limit exceeded");
+                await Promise.resolve();
+                expect(unhandled).toEqual([]);
+            } finally {
+                process.off("unhandledRejection", onUnhandled);
+            }
+        });
     });
 
     describe("getVisitorCountByColumn", () => {

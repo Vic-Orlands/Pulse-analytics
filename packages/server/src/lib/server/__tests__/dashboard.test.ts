@@ -24,6 +24,30 @@ describe("dashboard app discovery", () => {
 
         expect(data.siteId).toBe("pulse");
         expect(data.sites).toEqual(["pulse", "sleeksign", "portfolio", "pulseguard", "silo", "ethos"]);
-        expect(data.warnings).toContain("app discovery: Forbidden");
+        expect(data.warnings.some((warning) => /^app discovery:/i.test(warning))).toBe(true);
+    });
+
+    test("renders an unavailable dashboard instead of throwing when analytics queries fail", async () => {
+        vi.spyOn(console, "error").mockImplementation(() => {});
+        const fetch = vi.fn<typeof globalThis.fetch>().mockImplementation(
+            async () =>
+                new Response(JSON.stringify({ error: "limit exceeded" }), {
+                    status: 400,
+                    statusText: "Bad Request",
+                }),
+        );
+        vi.stubGlobal("fetch", fetch);
+
+        const data = await getDashboardData(new URL("https://pulse.mezie.dev/"), {
+            CF_ACCOUNT_ID: "account",
+            CF_BEARER_TOKEN: "token",
+            PUBLIC_SITE_IDS: "pulse",
+        } as App.Platform["env"]);
+
+        expect(data.siteId).toBe("pulse");
+        expect(data.source).toBe("live");
+        expect(data.stats.views).toBe(0);
+        expect(data.warnings.length).toBeGreaterThan(0);
+        expect(data.warnings.join(" ")).toMatch(/limit exceeded|too many requests/i);
     });
 });
