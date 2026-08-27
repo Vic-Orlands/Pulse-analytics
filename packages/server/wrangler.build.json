@@ -3,8 +3,30 @@
     "name": "pulse-analytics-build",
     "main": ".svelte-kit/cloudflare/_worker.js",
     "compatibility_date": "2026-08-05",
+    "compatibility_flags": ["nodejs_compat"],
     "assets": {
         "directory": ".svelte-kit/cloudflare",
         "binding": "ASSETS"
+    },
+    "analytics_engine_datasets": [
+        {
+            "binding": "WEB_COUNTER_AE",
+            "dataset": "metricsDataset"
+        },
+        {
+            "binding": "WEB_EVENTS_AE",
+            "dataset": "eventsDataset"
+        }
+    ],
+    "r2_buckets": [
+        {
+            "bucket_name": "pulse-analytics-archive",
+            "preview_bucket_name": "pulse-analytics-archive-dev",
+            "binding": "DAILY_ROLLUPS"
+        }
+    ],
+    "vars": {
+        "PUBLIC_APP_NAME": "Pulse",
+        "CF_ACCOUNT_ID": "1d53e8feb9f95e33e1fa75ab203357bd"
     }
 }

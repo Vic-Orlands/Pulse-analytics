@@ -51,6 +51,7 @@ export function intervalToSql(
     interval: string,
     tz?: string,
     bucketIntervalMinutes: number = 5,
+    options: { inclusiveEnd?: boolean } = {},
 ) {
     let startIntervalSql = "";
     let endIntervalSql = "";
@@ -75,6 +76,9 @@ export function intervalToSql(
         default:
             startIntervalSql = `toStartOfInterval(NOW() - INTERVAL '1' DAY, INTERVAL '${bucketIntervalMinutes}' MINUTE)`;
             endIntervalSql = `toStartOfInterval(NOW(), INTERVAL '${bucketIntervalMinutes}' MINUTE)`;
+    }
+    if (options.inclusiveEnd && interval !== "yesterday") {
+        endIntervalSql = "NOW()";
     }
     return { startIntervalSql, endIntervalSql };
 }
@@ -205,30 +209,76 @@ export class AnalyticsEngineAPI {
         });
     }
 
+    async querySql<T extends Record<string, string | number>>(query: string): Promise<{ data: T[]; error?: string }> {
+        const response = await this.query(query);
+        const text = await response.text();
+        let parsed: unknown;
+        try {
+            parsed = JSON.parse(text);
+        } catch {
+            return { data: [], error: text.slice(0, 400) || response.statusText };
+        }
+
+        if (!response.ok) {
+            const failure = parsed as { error?: string; errors?: Array<{ message?: string }> };
+            return {
+                data: [],
+                error: failure.error || failure.errors?.[0]?.message || response.statusText,
+            };
+        }
+
+        return { data: ((parsed as AnalyticsQueryResult<T>).data || []) as T[] };
+    }
+
+    private siteClause(siteId: string): string {
+        const value = escapeSqlString(siteId);
+        return `(index1 = '${value}' OR ${ColumnMappings.siteId} = '${value}')`;
+    }
+
     async getEvents(siteId: string, interval: string, tz?: string) {
-        // Analytics Engine allows at most 10 GROUP BY columns. Keep the dimensions
-        // that explain a registered signal: what happened, what was captured, where,
-        // and which device/region produced it.
-        const { startIntervalSql, endIntervalSql } = intervalToSql(interval, tz);
-        const response = await this.query(`
+        // Analytics Engine allows at most 10 GROUP BY columns. Group by the stored
+        // blob columns (not aliases) and keep copied text, page, origin, and device.
+        const { startIntervalSql, endIntervalSql } = intervalToSql(interval, tz, 5, { inclusiveEnd: true });
+        type EventRow = {
+            eventType: string; eventName: string; target: string; value: string; path: string;
+            country: string; region: string; city: string; deviceType: string; operatingSystem: string;
+            browser: string; host: string; userAgent: string; network: string; visitorId: string; sessionId: string;
+            count: number; lastSeen: string; sessionDepth: number;
+        };
+        const sql = (table: string) => `
             SELECT blob11 as eventType, blob12 as eventName, blob13 as target, blob14 as value,
                 blob3 as path, blob4 as country, blob16 as region, blob17 as city,
                 blob10 as deviceType, blob18 as operatingSystem,
+                argMax(blob6, timestamp) as browser,
+                argMax(blob1, timestamp) as host,
+                argMax(blob2, timestamp) as userAgent,
+                argMax(blob15, timestamp) as network,
+                argMax(blob19, timestamp) as visitorId,
+                argMax(blob20, timestamp) as sessionId,
                 SUM(_sample_interval) as count, MAX(timestamp) as lastSeen, MAX(double2) as sessionDepth
-            FROM eventsDataset
+            FROM ${table}
             WHERE timestamp >= ${startIntervalSql} AND timestamp < ${endIntervalSql}
-                AND blob8 = '${escapeSqlString(siteId)}'
+                AND ${this.siteClause(siteId)}
                 AND blob11 IN ('screenshot', 'copy', 'scrape', 'interaction')
-            GROUP BY eventType, eventName, target, value, path, country, region, city, deviceType, operatingSystem
+            GROUP BY blob11, blob12, blob13, blob14, blob3, blob4, blob16, blob17, blob10, blob18
             ORDER BY lastSeen DESC
-            LIMIT 100`);
-        if (!response.ok) throw new Error(response.statusText);
-        const result = (await response.json()) as AnalyticsQueryResult<{
-            eventType: string; eventName: string; target: string; value: string; path: string;
-            country: string; region: string; city: string; deviceType: string; operatingSystem: string;
-            count: number; lastSeen: string; sessionDepth: number;
-        }>;
-        return result.data;
+            LIMIT 100`;
+
+        const primary = await this.querySql<EventRow>(sql("eventsDataset"));
+        if (!primary.error) {
+            return primary.data;
+        }
+
+        const missingTable = /unknown table|doesn't exist|does not exist|not found/i.test(primary.error);
+        if (!missingTable) {
+            throw new Error(primary.error);
+        }
+
+        const fallback = await this.querySql<EventRow>(sql("metricsDataset"));
+        if (fallback.error) {
+            throw new Error(primary.error);
+        }
+        return fallback.data;
     }
 
     async getViewsGroupedByInterval(
@@ -589,46 +639,25 @@ export class AnalyticsEngineAPI {
         const { startIntervalSql, endIntervalSql } = intervalToSql(
             interval,
             tz,
+            5,
+            { inclusiveEnd: true },
         );
 
-        // first query by visitor count – this is to figure out the top N results
-        // by visitor count first
-        // NOTE: there's an await here; need to fix this or harms parallelism
-        const visitorCountByColumn = await this.getVisitorCountByColumn(
-            siteId,
-            column,
-            interval,
-            tz,
-            filters,
-            page,
-            limit,
-        );
-
-        // next, make a second query - this time for non-visitor hits - by filtering
-        // on the keys returned by the first query.
-        const keys = visitorCountByColumn.map(([key]) => key);
-
-        let filterStr = filtersToSql(filters);
+        const filterStr = filtersToSql(filters);
         const _column = ColumnMappings[column];
-
-        if (keys.length > 0) {
-            filterStr += ` AND ${_column} IN (${keys
-                .map((key) => `'${escapeSqlString(String(key))}'`)
-                .join(", ")})`;
-        }
-
+        // One grouped query avoids Analytics Engine failing on IN ('') for Direct
+        // referrers / empty paths, and still ranks by visitors in JavaScript.
         const query = `
             SELECT ${_column},
                 ${ColumnMappings.newVisitor} as isVisitor,
                 SUM(_sample_interval) as count
             FROM metricsDataset
             WHERE timestamp >= ${startIntervalSql} AND timestamp < ${endIntervalSql}
-                AND ${ColumnMappings.newVisitor} = 0
-                AND ${ColumnMappings.siteId} = '${siteId}'
+                AND ${this.siteClause(siteId)}
                 ${filterStr}
             GROUP BY ${_column}, ${ColumnMappings.newVisitor}
             ORDER BY count DESC
-            LIMIT ${limit * page}`;
+            LIMIT ${Math.max(limit * page * 4, 40)}`;
 
         type SelectionSet = {
             count: number;
@@ -639,57 +668,33 @@ export class AnalyticsEngineAPI {
             ColumnMappingToType<(typeof ColumnMappings)[T]>
         >;
 
-        const queryResult = this.query(query);
-        const returnPromise = new Promise<Record<string, AnalyticsCountResult>>(
-            (resolve, reject) =>
-                (async () => {
-                    const response = await queryResult;
+        const result = await this.querySql<SelectionSet>(query);
+        if (result.error) {
+            throw new Error(result.error);
+        }
 
-                    if (!response.ok) {
-                        reject(response.statusText);
-                    }
+        const merged = result.data.reduce(
+            (acc, row) => {
+                const key = String(row[_column] ?? "");
+                if (!Object.hasOwn(acc, key)) {
+                    acc[key] = {
+                        views: 0,
+                        visitors: 0,
+                        bounces: 0,
+                    } as AnalyticsCountResult;
+                }
 
-                    const responseData =
-                        (await response.json()) as AnalyticsQueryResult<SelectionSet>;
-
-                    // since CF AE doesn't support OFFSET clauses, we select up to LIMIT and
-                    // then slice that into the individual requested page
-                    const pageData = responseData.data.slice(
-                        limit * (page - 1),
-                        limit * page,
-                    );
-
-                    // remap visitor counts into SelectionSet objects, then insert into
-                    // the query results (pageData)
-                    visitorCountByColumn.forEach(([key, value]) => {
-                        pageData.push({
-                            [_column]: key,
-                            count: value,
-                            isVisitor: 1,
-                        } as SelectionSet);
-                    });
-
-                    const result = pageData.reduce(
-                        (acc, row) => {
-                            const key = row[_column] as string;
-                            if (!Object.hasOwn(acc, key)) {
-                                acc[key] = {
-                                    views: 0,
-                                    visitors: 0,
-                                    bounces: 0,
-                                } as AnalyticsCountResult;
-                            }
-
-                            accumulateCountsFromRowResult(acc[key], row);
-                            return acc;
-                        },
-                        {} as Record<string, AnalyticsCountResult>,
-                    );
-
-                    resolve(result);
-                })(),
+                accumulateCountsFromRowResult(acc[key], row);
+                return acc;
+            },
+            {} as Record<string, AnalyticsCountResult>,
         );
-        return returnPromise;
+
+        const ranked = Object.entries(merged).sort(
+            (a, b) => b[1].visitors - a[1].visitors || b[1].views - a[1].views,
+        );
+        const pageRows = ranked.slice(limit * (page - 1), limit * page);
+        return Object.fromEntries(pageRows);
     }
 
     async getCountByPath(

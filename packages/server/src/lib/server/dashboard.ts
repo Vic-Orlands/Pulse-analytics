@@ -60,6 +60,7 @@ function unavailable(siteId: string, interval: string, sites: string[]): Dashboa
         generatedAt: new Date().toISOString(),
         stats: { views: 0, visitors: 0, sessions: 0, bounces: 0, bounceRate: 0, pagesPerVisit: 0, previousVisitors: 0 },
         series: [], pages: [], routes: [], hostnames: [], referrers: [], countries: [], regions: [], browsers: [], browserVersions: [], operatingSystems: [], devices: [], events: [],
+        warnings: ["Cloudflare Analytics Engine credentials are not configured on this Worker."],
     };
 }
 
@@ -88,27 +89,50 @@ export async function getDashboardData(url: URL, env?: App.Platform["env"]): Pro
     };
     const timezone = "Africa/Lagos";
 
+    const warnings: string[] = [];
+    const note = async <T>(label: string, fallback: T, task: Promise<T>): Promise<T> => {
+        try {
+            return await task;
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            warnings.push(`${label}: ${message}`);
+            console.error(`Pulse analytics query failed (${label})`, error);
+            return fallback;
+        }
+    };
+
     const [counts, sessionCount, seriesRows, previousSeriesRows, pages, hostnames, referrers, countries, regions, browsers, browserVersions, operatingSystems, devices, eventRows] =
         await Promise.all([
-            api.getCounts(siteId, interval, timezone).catch(() => ({ views: 0, visitors: 0, bounces: 0 })),
-            api.getSessionCount(siteId, interval, timezone).catch(() => 0),
-            api.getViewsGroupedByInterval(siteId, range.type, range.start.toDate(), range.end.toDate(), timezone).catch(() => []),
-            api.getViewsGroupedByInterval(siteId, range.type, previousRange.start.toDate(), previousRange.end.toDate(), timezone).catch(() => []),
-            api.getCountByPath(siteId, interval, timezone, {}, 1, 20).catch(() => []),
-            api.getCountByHost(siteId, interval, timezone, {}, 1, 20).catch(() => []),
-            api.getCountByReferrer(siteId, interval, timezone, {}, 1, 20).catch(() => []),
-            api.getCountByCountry(siteId, interval, timezone).catch(() => []),
-            api.getCountByRegion(siteId, interval, timezone).catch(() => []),
-            api.getCountByBrowser(siteId, interval, timezone).catch(() => []),
-            api.getCountByBrowserVersion(siteId, interval, timezone).catch(() => []),
-            api.getCountByOperatingSystem(siteId, interval, timezone).catch(() => []),
-            api.getCountByDeviceType(siteId, interval, timezone).catch(() => []),
-            api.getEvents(siteId, interval, timezone).catch(() => []),
+            note("counts", { views: 0, visitors: 0, bounces: 0 }, api.getCounts(siteId, interval, timezone)),
+            note("sessions", 0, api.getSessionCount(siteId, interval, timezone)),
+            note("series", [], api.getViewsGroupedByInterval(siteId, range.type, range.start.toDate(), range.end.toDate(), timezone)),
+            note("previous-series", [], api.getViewsGroupedByInterval(siteId, range.type, previousRange.start.toDate(), previousRange.end.toDate(), timezone)),
+            note("pages", [], api.getCountByPath(siteId, interval, timezone, {}, 1, 20)),
+            note("hosts", [], api.getCountByHost(siteId, interval, timezone, {}, 1, 20)),
+            note("referrers", [], api.getCountByReferrer(siteId, interval, timezone, {}, 1, 20)),
+            note("countries", [], api.getCountByCountry(siteId, interval, timezone)),
+            note("regions", [], api.getCountByRegion(siteId, interval, timezone)),
+            note("browsers", [], api.getCountByBrowser(siteId, interval, timezone)),
+            note("browser-versions", [], api.getCountByBrowserVersion(siteId, interval, timezone)),
+            note("operating-systems", [], api.getCountByOperatingSystem(siteId, interval, timezone)),
+            note("devices", [], api.getCountByDeviceType(siteId, interval, timezone)),
+            note("events", [], api.getEvents(siteId, interval, timezone)),
         ]);
 
     const sessions = sessionCount || counts.visitors;
     const bounceRate = sessions > 0 ? Math.max(0, counts.bounces / sessions) * 100 : 0;
     const previousVisitors = previousSeriesRows.reduce((sum, [, point]) => sum + point.visitors, 0);
+    const labeledPages = presentCountRows(pages, formatPathLabel);
+
+    if (counts.views > 0 && labeledPages.length === 0) {
+        warnings.push("Pageviews were recorded, but the pages query returned no rows.");
+    }
+    if (counts.views > 0 && referrers.length === 0) {
+        warnings.push("Pageviews were recorded, but the referrer query returned no rows.");
+    }
+    if (eventRows.length === 0 && warnings.some((warning) => warning.startsWith("events:"))) {
+        warnings.push("Signal Ledger could not read eventsDataset. Confirm the WEB_EVENTS_AE Worker binding is deployed.");
+    }
 
     return {
         source: "live",
@@ -129,8 +153,8 @@ export async function getDashboardData(url: URL, env?: App.Platform["env"]): Pro
             previousViews: previousSeriesRows[index]?.[1].views ?? 0,
             previousVisitors: previousSeriesRows[index]?.[1].visitors ?? 0,
         })),
-        pages: presentCountRows(pages, formatPathLabel),
-        routes: presentCountRows(normalizeRoutes(pages), formatPathLabel),
+        pages: labeledPages,
+        routes: presentCountRows(normalizeRoutes(labeledPages), (label) => label),
         hostnames: presentCountRows(hostnames, formatHostLabel),
         referrers: presentCountRows(referrers, formatReferrerLabel),
         countries,
@@ -140,5 +164,6 @@ export async function getDashboardData(url: URL, env?: App.Platform["env"]): Pro
         operatingSystems,
         devices,
         events: presentEvents(eventRows),
+        warnings,
     };
 }

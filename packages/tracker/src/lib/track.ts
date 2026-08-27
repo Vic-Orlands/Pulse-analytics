@@ -46,18 +46,22 @@ export function trackEvent(client: Client, opts: TrackEventOpts) {
 
 function isSensitiveCopyTarget(target: EventTarget | null): boolean {
     if (!(target instanceof Element)) return false;
-    const field = target.closest("input, textarea, select");
-    if (!field) return false;
-    if (field instanceof HTMLInputElement) {
-        return ["password", "email", "tel", "hidden"].includes(field.type);
-    }
-    return true;
+    const field = target.closest("input");
+    if (!(field instanceof HTMLInputElement)) return false;
+    return ["password", "email", "tel", "hidden"].includes(field.type);
 }
 
 function copiedPayload(event: ClipboardEvent): string {
     const selected = typeof window.getSelection === "function" ? window.getSelection()?.toString() || "" : "";
-    const fromClipboard = event.clipboardData?.getData("text/plain") || "";
-    return (fromClipboard || selected).replace(/\s+/g, " ").trim().slice(0, 400);
+    const fromClipboard = event.clipboardData?.getData("text/plain") || event.clipboardData?.getData("text") || "";
+    const target = event.target;
+    let fromField = "";
+    if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
+        const start = target.selectionStart ?? 0;
+        const end = target.selectionEnd ?? 0;
+        if (end > start) fromField = target.value.slice(start, end);
+    }
+    return (fromClipboard || selected || fromField).replace(/\s+/g, " ").trim().slice(0, 400);
 }
 
 function describeCopyTarget(target: EventTarget | null): string {
@@ -77,13 +81,12 @@ export function autoTrackEvents(client: Client) {
     const onCopy = (event: ClipboardEvent) => {
         if (isSensitiveCopyTarget(event.target)) return;
         const value = copiedPayload(event);
-        if (!value) return;
         const element = event.target instanceof Element ? event.target.closest<HTMLElement>("[data-counterscale-event-name], code, pre") : null;
         trackEvent(client, {
             type: "copy",
             name: element?.dataset.counterscaleEventName || "Content copied",
             target: describeCopyTarget(event.target),
-            value,
+            value: value || undefined,
         });
     };
     const onClick = (event: MouseEvent) => {

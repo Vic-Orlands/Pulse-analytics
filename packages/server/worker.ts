@@ -1,11 +1,34 @@
 import type { ExportedHandler } from "@cloudflare/workers-types";
 import app from "./.svelte-kit/cloudflare/_worker.js";
+import { handleCollect } from "./app/analytics/worker-collect";
 import { extractAsArrow } from "./workers/lib/arrow";
+import { handleCacheHeaders } from "./app/analytics/collect";
 
 export default {
-    fetch(request, env, ctx) {
-        const pathname = new URL(request.url).pathname;
-        if (request.method === "GET" && (pathname === "/" || pathname.startsWith("/settings"))) {
+    async fetch(request, env, ctx) {
+        const url = new URL(request.url);
+        const pathname = url.pathname;
+
+        if (pathname === "/collect") {
+            return handleCollect(request, env);
+        }
+
+        if (pathname === "/cache" && request.method === "GET") {
+            const { hits, nextLastModifiedDate } = handleCacheHeaders(request.headers.get("if-modified-since"));
+            return new Response(JSON.stringify({ ht: hits }), {
+                headers: {
+                    "Access-Control-Allow-Origin": "*",
+                    "Content-Type": "application/json",
+                    "Last-Modified": nextLastModifiedDate.toUTCString(),
+                    Expires: "Mon, 01 Jan 1990 00:00:00 GMT",
+                    "Cache-Control": "no-cache",
+                    Pragma: "no-cache",
+                    Tk: "N",
+                },
+            });
+        }
+
+        if (request.method === "GET" && (pathname === "/" || pathname.startsWith("/settings") || pathname.startsWith("/signals"))) {
             const headers = new Headers(request.headers);
             headers.set("Cache-Control", "no-cache");
             request = new Request(request, { headers });

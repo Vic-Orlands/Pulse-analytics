@@ -14,7 +14,9 @@ import { AnalyticsEngineAPI, intervalToSql } from "../query";
 function createFetchResponse<T>(data: T) {
     return {
         ok: true,
+        statusText: "OK",
         json: () => new Promise<T>((resolve) => resolve(data)),
+        text: () => Promise.resolve(JSON.stringify(data)),
     };
 }
 
@@ -367,7 +369,6 @@ describe("AnalyticsEngineAPI", () => {
 
     describe("getAllCountsByColumn", () => {
         test("it should return an array of [column, count] tuples", async () => {
-            // return 2 mocked responses
             fetch.mockResolvedValueOnce(
                 createFetchResponse({
                     data: [
@@ -376,12 +377,6 @@ describe("AnalyticsEngineAPI", () => {
                             isVisitor: 1,
                             count: 3,
                         },
-                    ],
-                }),
-            );
-            fetch.mockResolvedValueOnce(
-                createFetchResponse({
-                    data: [
                         {
                             blob4: "CA",
                             isVisitor: 0,
@@ -401,14 +396,12 @@ describe("AnalyticsEngineAPI", () => {
                 },
             );
 
-            expect(fetch).toHaveBeenCalledTimes(2);
-            expect(
-                (fetch as Mock).mock.calls[0][1].body
-                    .replace(/\s+/g, " ") // removes tabs and whitespace from query
-                    .trim(),
-            );
-            // console.log(result);
-            expect(await result).toEqual({
+            expect(fetch).toHaveBeenCalledTimes(1);
+            const sql = String((fetch as Mock).mock.calls[0][1].body);
+            expect(sql).toContain("NOW()");
+            expect(sql).toContain("index1 = 'example.com'");
+            expect(sql).not.toMatch(/\sIN\s*\(/);
+            expect(result).toEqual({
                 CA: {
                     views: 4,
                     visitors: 3,
@@ -418,17 +411,11 @@ describe("AnalyticsEngineAPI", () => {
         });
 
         test("should handle case where there are no results", async () => {
-            fetch
-                .mockResolvedValueOnce(
-                    createFetchResponse({
-                        data: [], // no visitor count results
-                    }),
-                )
-                .mockResolvedValueOnce(
-                    createFetchResponse({
-                        data: [], // no non-visitor results
-                    }),
-                );
+            fetch.mockResolvedValueOnce(
+                createFetchResponse({
+                    data: [],
+                }),
+            );
 
             const result = await api.getAllCountsByColumn(
                 "example.com",
@@ -438,7 +425,27 @@ describe("AnalyticsEngineAPI", () => {
             );
 
             expect(result).toEqual({});
-            expect(fetch).toHaveBeenCalledTimes(2);
+            expect(fetch).toHaveBeenCalledTimes(1);
+        });
+
+        test("keeps empty referrer keys so Direct traffic can be labeled", async () => {
+            fetch.mockResolvedValueOnce(
+                createFetchResponse({
+                    data: [
+                        { blob5: "", isVisitor: 1, count: 9 },
+                        { blob5: "https://google.com/", isVisitor: 1, count: 4 },
+                    ],
+                }),
+            );
+
+            const result = await api.getAllCountsByColumn(
+                "example.com",
+                "referrer",
+                "7d",
+            );
+
+            expect(result[""]?.visitors).toBe(9);
+            expect(result["https://google.com/"]?.visitors).toBe(4);
         });
     });
 
@@ -500,6 +507,7 @@ describe("AnalyticsEngineAPI", () => {
                             city: "Lagos",
                             deviceType: "desktop",
                             operatingSystem: "macOS",
+                            browser: "Chrome",
                             count: 3,
                             lastSeen: "2026-08-26 09:00:00",
                             sessionDepth: 4,
@@ -514,13 +522,52 @@ describe("AnalyticsEngineAPI", () => {
             const groupedColumns = grouped.split(",").map((column) => column.trim()).filter(Boolean);
 
             expect(groupedColumns).toHaveLength(10);
+            expect(groupedColumns.every((column) => column.startsWith("blob"))).toBe(true);
             expect(sql).toContain("blob14 as value");
             expect(sql).toContain("blob16 as region");
             expect(sql).toContain("blob10 as deviceType");
+            expect(sql).toContain("FROM eventsDataset");
+            expect(sql).toContain("AND timestamp < NOW()");
+            expect(sql).toContain("index1 = 'pulse.dev'");
+            expect(sql).toContain("argMax(blob6, timestamp) as browser");
             expect(sql).toContain("AND blob11 IN ('screenshot', 'copy', 'scrape', 'interaction')");
             expect(result[0].value).toBe("npm install pulse");
             expect(result[0].region).toBe("Lagos");
             expect(result[0].deviceType).toBe("desktop");
+        });
+
+        test("falls back to metricsDataset when eventsDataset is missing", async () => {
+            fetch
+                .mockResolvedValueOnce({
+                    ok: false,
+                    statusText: "Bad Request",
+                    text: () => Promise.resolve(JSON.stringify({ error: "unknown table eventsDataset" })),
+                })
+                .mockResolvedValueOnce(
+                    createFetchResponse({
+                        data: [
+                            {
+                                eventType: "copy",
+                                eventName: "Content copied",
+                                target: "/docs",
+                                value: "hello",
+                                path: "/docs",
+                                country: "US",
+                                region: "CA",
+                                city: "SF",
+                                deviceType: "desktop",
+                                operatingSystem: "macOS",
+                                count: 1,
+                                lastSeen: "2026-08-26 09:00:00",
+                                sessionDepth: 1,
+                            },
+                        ],
+                    }),
+                );
+
+            const result = await api.getEvents("pulse.dev", "7d");
+            expect(result[0].value).toBe("hello");
+            expect(String((fetch as Mock).mock.calls[1][1].body)).toContain("FROM metricsDataset");
         });
     });
 
@@ -683,6 +730,11 @@ describe("intervalToSql", () => {
             startIntervalSql:
                 "toStartOfInterval(NOW() - INTERVAL '90' DAY, INTERVAL '5' MINUTE)",
             endIntervalSql: "toStartOfInterval(NOW(), INTERVAL '5' MINUTE)",
+        });
+        expect(intervalToSql("7d", undefined, 5, { inclusiveEnd: true })).toStrictEqual({
+            startIntervalSql:
+                "toStartOfInterval(NOW() - INTERVAL '7' DAY, INTERVAL '5' MINUTE)",
+            endIntervalSql: "NOW()",
         });
     });
 

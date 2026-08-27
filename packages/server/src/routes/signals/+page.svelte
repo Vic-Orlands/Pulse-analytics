@@ -103,7 +103,14 @@
                         <small class="when">{event.lastSeen}</small>
                     </button>
                 {:else}
-                    <div class="empty"><span>∅</span><h3>No classified signals yet.</h3><p>Copy actions, screenshots, and other events will appear here with the captured content, page, device, and region.</p></div>
+            <div class="empty">
+                <span>∅</span>
+                <h3>No classified signals yet.</h3>
+                <p>Copy actions, screenshots, and other events will appear here with the captured content, page, device, and region. After installing the current tracker snippet, hard-refresh the site you copied from so it is not serving a cached tracker.js.</p>
+                {#if data.warnings.length}
+                    <p>{data.warnings.join(" · ")}</p>
+                {/if}
+            </div>
                 {/each}
             </div>
         </section>

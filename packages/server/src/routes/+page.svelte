@@ -129,6 +129,9 @@
                         <span>[ Observatory Journal No. 42 ]</span>
                         <span>Property: {data.siteId} — Window: {periodLabel} ({data.series.length} days)</span>
                     </div>
+                    {#if data.warnings.length}
+                        <p class="query-warnings">{data.warnings.join(" · ")}</p>
+                    {/if}
                     <h1>
                         {data.stats.visitors.toLocaleString()} individuals connected to {data.siteId}.
                         <em>Traffic expanded by {growth}%</em> over the baseline period.
@@ -281,6 +284,7 @@
     h1 em { color: var(--accent); font-weight: 400; }
     h2 { font-size: clamp(26px, 2.8vw, 36px); line-height: 1; letter-spacing: -.03em; }
     .journal-head { margin-bottom: 54px; }
+    .query-warnings { max-width: 720px; margin-top: 14px; color: var(--accent); font-family: "IBM Plex Mono", monospace; font-size: 8px; line-height: 1.55; }
     .journal-meta { display: flex; justify-content: space-between; gap: 30px; color: var(--muted); font-family: "IBM Plex Mono", monospace; font-size: 8px; letter-spacing: .06em; text-transform: uppercase; }
     .ruled-frame { position: relative; border-block: 1px solid var(--line); }
     .ruled-frame::before, .ruled-frame::after { position: absolute; z-index: 2; top: -8px; bottom: -8px; width: 1px; background: var(--line); content: ""; pointer-events: none; }

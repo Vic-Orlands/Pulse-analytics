@@ -30,7 +30,9 @@ describe("surface labels", () => {
     test("keeps readable page paths and hostnames", () => {
         expect(formatPathLabel("")).toBe("/");
         expect(formatPathLabel("docs/install")).toBe("/docs/install");
+        expect(formatPathLabel("https://www.pulse.dev/docs/install?x=1")).toBe("/docs/install");
         expect(formatHostLabel("https://www.pulse.dev")).toBe("pulse.dev");
+        expect(formatHostLabel("https://pulse.dev")).toBe("pulse.dev");
     });
 });
 

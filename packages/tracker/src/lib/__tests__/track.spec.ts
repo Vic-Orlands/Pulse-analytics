@@ -708,6 +708,28 @@ describe("autoTrackEvents", () => {
         stop();
     });
 
+    test("still records a copy when selected text cannot be read", () => {
+        vi.spyOn(window, "getSelection").mockReturnValue({
+            toString: () => "",
+        } as unknown as Selection);
+        const client = new Client({
+            siteId: "test-site",
+            reporterUrl: "https://example.com/collect",
+            autoTrackPageviews: false,
+            reportOnLocalhost: true,
+        });
+        const stop = autoTrackEvents(client);
+        document.getElementById("snippet")?.dispatchEvent(new Event("copy", { bubbles: true }));
+        expect(makeRequestMock).toHaveBeenCalledWith(
+            "https://example.com/collect",
+            expect.objectContaining({
+                ev: "1",
+                et: "copy",
+            }),
+        );
+        stop();
+    });
+
     test("does not record copy from password fields", () => {
         document.body.innerHTML = `<input id="secret" type="password" value="hunter2" />`;
         const client = new Client({

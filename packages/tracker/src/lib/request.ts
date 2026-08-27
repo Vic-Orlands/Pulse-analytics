@@ -1,7 +1,9 @@
 import type { CollectRequestParams, CacheResponse } from "../shared/types";
 import { buildCollectUrl } from "../shared/request";
+import { queryParamStringify } from "../shared/utils";
 
 const REQUEST_TIMEOUT = 1000;
+const EVENT_TIMEOUT = 2500;
 
 /**
  * Checks the cache status by calling the /cache endpoint
@@ -54,17 +56,29 @@ export function checkCacheStatus(
     });
 }
 
+function sendWithXhr(url: string, params: CollectRequestParams, timeout: number) {
+    const xhr = new XMLHttpRequest();
+    const fullUrl = buildCollectUrl(url, params);
+
+    xhr.open("GET", fullUrl, true);
+    xhr.setRequestHeader("Content-Type", "text/plain");
+    xhr.timeout = timeout;
+    xhr.send();
+}
+
 /**
  * Makes a request to the collect endpoint
  * @param url The collect endpoint URL
  * @param params The parameters to send
  */
 export function makeRequest(url: string, params: CollectRequestParams) {
-    const xhr = new XMLHttpRequest();
-    const fullUrl = buildCollectUrl(url, params); // Don't filter empty strings for browser compatibility
+    if (params.ev === "1" && typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
+        const body = queryParamStringify(params).slice(1);
+        const payload = new Blob([body], { type: "text/plain;charset=UTF-8" });
+        if (navigator.sendBeacon(url, payload)) {
+            return;
+        }
+    }
 
-    xhr.open("GET", fullUrl, true);
-    xhr.setRequestHeader("Content-Type", "text/plain");
-    xhr.timeout = REQUEST_TIMEOUT;
-    xhr.send();
+    sendWithXhr(url, params, params.ev === "1" ? EVENT_TIMEOUT : REQUEST_TIMEOUT);
 }

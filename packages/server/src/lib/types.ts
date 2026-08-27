@@ -69,4 +69,5 @@ export type DashboardData = {
     operatingSystems: CountRow[];
     devices: CountRow[];
     events: AnalyticsEvent[];
+    warnings: string[];
 };

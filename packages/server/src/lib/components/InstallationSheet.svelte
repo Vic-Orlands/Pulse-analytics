@@ -8,7 +8,7 @@
     let copied = $state("");
     let closeButton = $state<HTMLButtonElement>();
 
-    const snippet = (site: string) => `<script id="counterscale-script" data-site-id="${site}" src="${origin}/tracker.js" defer><\/script>`;
+    const snippet = (site: string) => `<script id="counterscale-script" data-site-id="${site}" src="${origin}/tracker.js?v=3.4.1" defer><\/script>`;
     const eventExample = [
         "window.counterscale.trackEvent({",
         '  type: "copy",',

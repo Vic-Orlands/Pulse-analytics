@@ -66,7 +66,16 @@ function capitalize(value: string): string {
 }
 
 export function formatPathLabel(raw: string): string {
-    const value = decodeURIComponentSafe(raw || "").trim() || "/";
+    const value = decodeURIComponentSafe(raw || "").trim();
+    if (!value) return "/";
+    try {
+        if (/^[a-z][a-z0-9+.-]*:\/\//i.test(value)) {
+            const url = new URL(value);
+            return url.pathname || "/";
+        }
+    } catch {
+        // fall through to path formatting
+    }
     return value.startsWith("/") ? value : `/${value}`;
 }
 
@@ -75,9 +84,10 @@ export function formatHostLabel(raw: string): string {
     if (!value) return "(unknown host)";
     try {
         const url = value.includes("://") ? new URL(value) : new URL(`https://${value}`);
-        return url.hostname.replace(/^www\./i, "") || value;
+        const host = (url.hostname || url.host).replace(/^www\./i, "");
+        return host || value;
     } catch {
-        return value.replace(/^https?:\/\//i, "").replace(/^www\./i, "").split("/")[0] || value;
+        return value.replace(/^[a-z][a-z0-9+.-]*:\/\//i, "").replace(/^www\./i, "").split("/")[0] || value;
     }
 }
 

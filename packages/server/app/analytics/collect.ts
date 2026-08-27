@@ -1,7 +1,7 @@
 import type { AnalyticsEngineDataset } from "@cloudflare/workers-types";
 import { UAParser } from "ua-parser-js";
 import type { IDevice } from "ua-parser-js";
-import { maskBrowserVersion } from "~/lib/utils";
+import { maskBrowserVersion } from "../lib/utils";
 
 // Cookieless visitor/session tracking
 // Uses the approach described here: https://notes.normally.com/cookieless-unique-visitor-counts/
@@ -133,7 +133,7 @@ function getDeviceTypeFromDevice(device: IDevice): string {
 
 export function collectRequestHandler(
     request: Request,
-    env: { WEB_COUNTER_AE: AnalyticsEngineDataset; WEB_EVENTS_AE?: AnalyticsEngineDataset },
+    env: { WEB_COUNTER_AE?: AnalyticsEngineDataset; WEB_EVENTS_AE?: AnalyticsEngineDataset },
     extra: Record<string, string> = {}, // extra request properties (i.e. Cloudflare properties)
 ) {
     const params = extractParamsFromQueryString(request.url);
@@ -219,9 +219,13 @@ export function collectRequestHandler(
     if (typeof city === "string") data.city = city;
 
     if (params.ev === "1") {
-        if (env.WEB_EVENTS_AE) {
+        if (!env.WEB_EVENTS_AE) {
+            console.error("WEB_EVENTS_AE binding is missing; copy and other signals are not stored");
+        } else {
             writeEventDataPoint(env.WEB_EVENTS_AE, data, params, maskNetwork(extra.network || extra.clientIp || ""));
         }
+    } else if (!env.WEB_COUNTER_AE) {
+        console.error("WEB_COUNTER_AE binding is missing; pageviews are not stored");
     } else {
         writeDataPoint(env.WEB_COUNTER_AE, data);
     }
