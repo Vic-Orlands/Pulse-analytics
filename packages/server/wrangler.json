@@ -27,7 +27,8 @@
     ],
     "vars": {
         "PUBLIC_APP_NAME": "Pulse",
-        "CF_ACCOUNT_ID": "1d53e8feb9f95e33e1fa75ab203357bd"
+        "CF_ACCOUNT_ID": "1d53e8feb9f95e33e1fa75ab203357bd",
+        "PUBLIC_SITE_IDS": "pulse,sleeksign,portfolio,pulseguard,silo,ethos"
     },
     "triggers": {
         "crons": ["0 2 * * *"]
