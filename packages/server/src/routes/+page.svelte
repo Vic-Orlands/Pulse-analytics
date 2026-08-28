@@ -86,8 +86,11 @@
         <p class="lede">
             Pulse is a private analytics dashboard for the sites you run. A Cloudflare Worker serves
             both the tracker and the dashboard, measuring visitors, views, sessions, pages, referrers,
-            countries, and devices without cookies or personal data. The first pageview creates an
-            app automatically.
+            countries, and devices without cookies or personal data.
+        </p>
+        <p class="lede">
+            When you add the tracker script to any of your application, be it React, Next, SvelteKit, etc, the first pageview creates an
+            app inside Pulse's analytics dashboard automatically. You don't need to make any other changes to see your analytics funneled in.
         </p>
     </section>
 
