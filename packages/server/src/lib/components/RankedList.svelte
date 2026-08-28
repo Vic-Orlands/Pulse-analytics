@@ -14,17 +14,17 @@
     const max = $derived(Math.max(...rows.map((row) => row[1]), 1));
 </script>
 
-<section class="ranking" data-reveal>
+<section class="panel ranking">
     <header>
         <div>
-            <span>{eyebrow}</span>
+            <span class="kicker">{eyebrow}</span>
             <h2>{title}</h2>
         </div>
-        <span>Visitors</span>
+        <span class="kicker">Visitors</span>
     </header>
 
     {#if rows.length === 0}
-        <p class="empty">No traffic recorded for this period.</p>
+        <p class="empty-copy">No traffic recorded for this period.</p>
     {:else}
         <ol>
             {#each rows.slice(0, 6) as row, index}
@@ -44,100 +44,22 @@
 </section>
 
 <style>
-    .ranking {
-        min-width: 0;
-        padding-top: 15px;
-        border-top: 1px solid var(--theme-ink);
-    }
-
-    header {
-        display: flex;
-        align-items: end;
-        justify-content: space-between;
-        padding-bottom: 13px;
-        border-bottom: 1px solid var(--theme-line);
-    }
-
-    header span {
-        color: var(--theme-muted);
-        font-family: "IBM Plex Mono", monospace;
-        font-size: 8px;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-    }
-
-    h2 {
-        margin: 5px 0 0;
-        color: var(--theme-ink);
-        font-family: var(--theme-display);
-        font-size: 24px;
-        font-weight: 400;
-        letter-spacing: -0.04em;
-    }
-
-    ol {
-        margin: 0;
-        padding: 0;
-        list-style: none;
-    }
-
+    .ranking { min-width: 0; padding: 16px 16px 8px; }
+    header { display: flex; align-items: end; justify-content: space-between; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+    h2 { margin: 6px 0 0; font-size: var(--text-lg); font-weight: 600; letter-spacing: -0.02em; }
+    ol { margin: 0; padding: 0; list-style: none; }
     li {
         display: grid;
-        grid-template-columns: 27px minmax(0, 1fr) auto;
+        grid-template-columns: 28px minmax(0, 1fr) auto;
         align-items: center;
         min-height: 50px;
         gap: 9px;
-        border-bottom: 1px solid var(--theme-line);
+        border-bottom: 1px solid var(--line);
     }
-
-    .rank,
-    strong {
-        color: var(--theme-muted);
-        font-family: "IBM Plex Mono", monospace;
-        font-size: 9px;
-        font-weight: 500;
-    }
-
-    .label {
-        min-width: 0;
-    }
-
-    .label > span {
-        display: block;
-        overflow: hidden;
-        color: var(--theme-ink);
-        font-size: 11px;
-        font-weight: 550;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .plot {
-        position: relative;
-        height: 1px;
-        margin-top: 7px;
-        background: var(--theme-line);
-    }
-
-    .plot i {
-        position: absolute;
-        top: -2.5px;
-        left: var(--position);
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: var(--theme-accent);
-        transform: translateX(-50%);
-    }
-
-    strong {
-        color: var(--theme-ink);
-    }
-
-    .empty {
-        margin: 0;
-        padding: 30px 0;
-        color: var(--theme-muted);
-        font-size: 11px;
-    }
+    .rank, strong { color: var(--muted); font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums; }
+    .label { min-width: 0; }
+    .label > span { display: block; overflow: hidden; color: var(--ink); font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+    .plot { position: relative; height: 2px; margin-top: 8px; background: var(--line); border-radius: 99px; }
+    .plot i { position: absolute; top: -3px; left: var(--position); width: 8px; height: 8px; border-radius: 50%; background: var(--accent); transform: translateX(-50%); }
+    strong { color: var(--ink); }
 </style>

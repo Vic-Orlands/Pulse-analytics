@@ -21,7 +21,7 @@ pnpm --filter @counterscale/tracker build
 pnpm --filter @counterscale/server dev
 ```
 
-The local dashboard is available at `http://localhost:5173`.
+The local dashboard is available at `http://localhost:3005`. Without Cloudflare credentials, Pulse loads sample data so you can work on the interface locally.
 
 ## Deployment
 

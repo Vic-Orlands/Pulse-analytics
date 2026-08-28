@@ -121,7 +121,7 @@
         overflow: hidden;
         color: #f2f1f0;
         background: #070709;
-        font-family: "Manrope Variable", "Avenir Next", sans-serif;
+        font-family: "Inter Variable", Inter, ui-sans-serif, system-ui, sans-serif;
     }
 
     .drafting {
@@ -177,14 +177,14 @@
     h1,
     h2 {
         margin: 0;
-        font-family: "Bodoni 72", Didot, "Times New Roman", serif;
-        font-weight: 400;
-        letter-spacing: -0.045em;
+        font-family: inherit;
+        font-weight: 600;
+        letter-spacing: -0.02em;
     }
 
     h1 {
-        font-size: 47px;
-        line-height: 1.19;
+        font-size: var(--text-lg);
+        line-height: 1.3;
     }
 
     h1 em,
@@ -195,7 +195,7 @@
     .intro p {
         margin: 36px 0 0;
         color: #a4a3aa;
-        font-size: 22px;
+        font-size: 14px;
         font-weight: 560;
         line-height: 1.55;
         letter-spacing: -0.025em;
@@ -233,8 +233,8 @@
     }
 
     h2 {
-        font-size: 31px;
-        line-height: 1;
+        font-size: var(--text-lg);
+        line-height: 1.3;
     }
 
     .filters {
@@ -351,7 +351,7 @@
         }
 
         h1 {
-            font-size: clamp(35px, 10.5vw, 46px);
+            font-size: var(--text-lg);
         }
 
         .intro p {
