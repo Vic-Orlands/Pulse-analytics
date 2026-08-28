@@ -2,6 +2,8 @@
 
 Pulse is a private, multi-site web analytics dashboard built on Cloudflare Workers and Analytics Engine. It is a customized fork of [Counterscale](https://github.com/benvinegar/counterscale).
 
+<img width="1800" height="1169" alt="Screenshot 2026-08-29 at 12 17 06 AM" src="https://github.com/user-attachments/assets/aedebafc-6153-490c-b0e2-d61720de1d0e" />
+
 It tracks page views, visitors, sessions, bounce rate, pages, referrers, campaigns, countries, regions, cities, browsers, operating systems, and device types without cookies or personal data.
 
 ## Stack
