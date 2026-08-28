@@ -61,7 +61,7 @@ function event(
 
 function seriesFor(interval: string): TrafficPoint[] {
     const hourly = interval === "today" || interval === "yesterday" || interval === "1d";
-    const count = hourly ? 12 : interval === "90d" ? 14 : interval === "30d" ? 14 : interval === "14d" ? 14 : 7;
+    const count = hourly ? 12 : interval === "90d" ? 30 : interval === "30d" ? 30 : interval === "14d" ? 14 : 7;
     const visitors = hourly
         ? [18, 24, 19, 31, 42, 38, 51, 47, 36, 29, 22, 17]
         : [96, 128, 114, 162, 148, 186, 174, 132, 158, 171, 149, 188, 166, 142];
@@ -73,8 +73,8 @@ function seriesFor(interval: string): TrafficPoint[] {
         const date = new Date();
         if (hourly) date.setHours(date.getHours() - (count - 1 - index), 0, 0, 0);
         else date.setDate(date.getDate() - (count - 1 - index));
-        const current = visitors[index] ?? 120;
-        const prior = previous[index] ?? 100;
+        const current = visitors[index % visitors.length] ?? 120;
+        const prior = previous[index % previous.length] ?? 100;
         return {
             date,
             visitors: current,

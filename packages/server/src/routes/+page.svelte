@@ -36,7 +36,11 @@
     const formatNumber = (value: number) => compact.format(value);
     const formatPercent = (value: number) => `${value.toFixed(1)}%`;
     const periodLabel = $derived(
-        data.interval === "today" ? "today" : data.interval === "yesterday" ? "yesterday" : `the last ${data.interval}`,
+        data.interval === "today"
+            ? "today"
+            : data.interval === "yesterday"
+                ? "yesterday"
+                : `last ${data.interval.replace("d", " days")}`,
     );
     const visitorRows = $derived(visitorView === "pages" ? data.pages : visitorView === "routes" ? data.routes : data.hostnames);
     const geographyRows = $derived(geography === "countries" ? data.countries : data.regions);
