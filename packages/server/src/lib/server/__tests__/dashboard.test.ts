@@ -50,4 +50,17 @@ describe("dashboard app discovery", () => {
         expect(data.warnings.length).toBeGreaterThan(0);
         expect(data.warnings.join(" ")).toMatch(/limit exceeded|too many requests/i);
     });
+
+    test("loads sample data in development when Cloudflare is not configured", async () => {
+        const data = await getDashboardData(new URL("https://pulse.mezie.dev/?site=pulse&interval=7d"), {
+            PUBLIC_SITE_IDS: "pulse,sleeksign",
+        } as App.Platform["env"]);
+
+        expect(data.source).toBe("demo");
+        expect(data.siteId).toBe("pulse");
+        expect(data.sites).toEqual(["pulse", "sleeksign"]);
+        expect(data.stats.visitors).toBeGreaterThan(0);
+        expect(data.series.length).toBeGreaterThan(0);
+        expect(data.warnings[0]).toMatch(/sample data/i);
+    });
 });

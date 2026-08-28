@@ -20,6 +20,7 @@ import {
     presentSessionInsights,
     uniqueSessionCount,
 } from "./insights";
+import { demoDashboard } from "./demo";
 
 const intervals = new Set([
     "today",
@@ -159,6 +160,13 @@ async function loadDashboardData(
         url.searchParams.get("site") || configuredSites[0] || "";
 
     if (!env?.CF_ACCOUNT_ID || !env.CF_BEARER_TOKEN) {
+        if (import.meta.env.DEV) {
+            return demoDashboard({
+                siteId: requestedSite,
+                interval,
+                sites: configuredSites,
+            });
+        }
         return unavailable(requestedSite, interval, configuredSites);
     }
 

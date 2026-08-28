@@ -49,16 +49,16 @@
 
 {#if open}
     <button class="fixed inset-0 z-[70] cursor-default border-0 bg-[color-mix(in_srgb,var(--ink)_25%,transparent)]" aria-label="Close tracking installations" onclick={onclose}></button>
-    <div class="fixed inset-y-3 right-3 z-[80] w-[min(680px,calc(100%-24px))] overflow-y-auto bg-[var(--panel)] text-xs text-[var(--ink)] shadow-[0_0_0_1px_var(--line),-28px_0_90px_color-mix(in_srgb,var(--ink)_18%,transparent)] max-[600px]:inset-x-2 max-[600px]:top-2 max-[600px]:bottom-[74px] max-[600px]:w-auto" role="dialog" aria-modal="true" aria-labelledby="installation-title">
+    <div class="fixed inset-y-3 right-3 z-[80] w-[min(680px,calc(100%-24px))] overflow-y-auto rounded-2xl bg-[var(--panel)] text-sm text-[var(--ink)] shadow-[var(--shadow)] ring-1 ring-[var(--line)] max-[600px]:inset-x-2 max-[600px]:top-2 max-[600px]:bottom-[86px] max-[600px]:w-auto" role="dialog" aria-modal="true" aria-labelledby="installation-title">
         <header class="sticky top-0 z-[2] flex items-start justify-between border-b border-[var(--line)] bg-[color-mix(in_srgb,var(--panel)_94%,transparent)] p-6 backdrop-blur-xl">
             <div>
-                <span class="font-mono text-xs uppercase tracking-[.07em] text-[var(--muted)]">Collector setup</span>
-                <h2 class="mt-2 font-serif text-4xl font-normal tracking-[-.035em]" id="installation-title">Add Pulse to any app</h2>
+                <span class="kicker">Collector setup</span>
+                <h2 class="serif mt-2 text-4xl font-normal tracking-[-.035em]" id="installation-title">Add Pulse to any app</h2>
             </div>
-            <button class="grid size-9 cursor-pointer place-items-center border-0 bg-transparent text-[var(--ink)] shadow-[0_0_0_1px_var(--line)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" bind:this={closeButton} onclick={onclose} aria-label="Close tracking installations"><HugeiconsIcon icon={Cancel01Icon} size={17} strokeWidth={1.6} /></button>
+            <button class="grid size-9 cursor-pointer place-items-center rounded-xl border-0 bg-transparent text-[var(--ink)] shadow-[0_0_0_1px_var(--line)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" bind:this={closeButton} onclick={onclose} aria-label="Close tracking installations"><HugeiconsIcon icon={Cancel01Icon} size={17} strokeWidth={1.6} /></button>
         </header>
 
-        <p class="m-0 px-6 py-6 text-xs leading-6 text-[var(--muted)]">
+        <p class="m-0 px-6 py-6 text-sm leading-6 text-[var(--muted)]">
             This is a sample for any application — not a list of apps already in Pulse. Paste the snippet into the app shell, keep <code class="text-[var(--ink)]">id="counterscale-script"</code>, and choose a stable <code class="text-[var(--ink)]">data-site-id</code>. The first pageview creates that app in Pulse automatically.
         </p>
 
@@ -84,7 +84,7 @@
             <span class="font-mono text-xs uppercase tracking-[.07em] text-[var(--muted)]">Where to add it</span>
             <h3 class="mt-2 font-serif text-3xl font-normal">Framework shells</h3>
             <div class="mt-4 flex flex-wrap" aria-label="Framework">
-                {#each guides as guide}
+                {#each guides as guide (guide.id)}
                     <button class="min-w-[72px] cursor-pointer border-0 px-3 py-2 font-mono text-xs uppercase text-[var(--muted)] shadow-[0_0_0_1px_var(--line)] {framework === guide.id ? 'bg-[var(--ink)] text-[var(--paper)]' : 'bg-transparent'}" onclick={() => (framework = guide.id)} aria-pressed={framework === guide.id}>{guide.label}</button>
                 {/each}
             </div>

@@ -93,7 +93,7 @@ export type CohortSplit = {
 };
 
 export type DashboardData = {
-    source: "live" | "unavailable";
+    source: "live" | "unavailable" | "demo";
     siteId: string;
     sites: string[];
     interval: string;

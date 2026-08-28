@@ -30,7 +30,7 @@
     <div class="inspector" role="dialog" aria-modal="true" aria-labelledby="event-title">
         <header>
             <div>
-                <span>{event.id} / {names[event.type]}</span>
+                <span class="kicker">{event.id} · {names[event.type]}</span>
                 <h2 id="event-title">{event.label}</h2>
             </div>
             <button bind:this={closeButton} onclick={onclose} aria-label="Close event details"><HugeiconsIcon icon={Cancel01Icon} size={17} strokeWidth={1.6} /></button>
@@ -38,20 +38,20 @@
 
         {#if (event.type === "copy" || event.type === "outbound" || event.type === "download") && event.detail}
             <section class="payload">
-                <span>{event.type === "copy" ? "Copied content" : event.type === "outbound" ? "Destination" : "Downloaded file"}</span>
+                <span class="kicker">{event.type === "copy" ? "Copied content" : event.type === "outbound" ? "Destination" : "Downloaded file"}</span>
                 <blockquote>{event.detail}</blockquote>
                 <p>Captured from {meaningful(event.visitor.path)} · {event.origin} · {event.device}</p>
             </section>
         {:else}
             <section class="event-summary">
-                <span>Observed signal</span>
+                <span class="kicker">Observed signal</span>
                 <strong>{event.target}</strong>
                 <p>{new Date(event.occurredAt).toLocaleString()} · {event.count.toLocaleString()} observations · {event.origin} · {event.device}</p>
             </section>
         {/if}
 
         <section>
-            <span>Where it was registered</span>
+            <span class="kicker">Where it was registered</span>
             <dl>
                 <div><dt>Page</dt><dd>{meaningful(event.visitor.path)}</dd></div>
                 <div><dt>Target surface</dt><dd>{meaningful(event.target)}</dd></div>
@@ -62,7 +62,7 @@
             </dl>
         </section>
         <section>
-            <span>Device &amp; client</span>
+            <span class="kicker">Device &amp; client</span>
             <dl>
                 <div><dt>Device</dt><dd>{meaningful(event.visitor.deviceType)}</dd></div>
                 <div><dt>Operating system</dt><dd>{meaningful(event.visitor.operatingSystem)}</dd></div>
@@ -72,7 +72,7 @@
             {#if event.visitor.userAgent}<pre>{event.visitor.userAgent}</pre>{/if}
         </section>
         <section>
-            <span>Anonymous visitor</span>
+            <span class="kicker">Anonymous visitor</span>
             <dl>
                 <div><dt>Visitor ID</dt><dd>{meaningful(event.visitor.id)}</dd></div>
                 <div><dt>Session ID</dt><dd>{meaningful(event.visitor.sessionId)}</dd></div>
@@ -87,5 +87,95 @@
 {/if}
 
 <style>
-    .scrim{position:fixed;z-index:70;inset:0;border:0;background:color-mix(in srgb,var(--ink) 24%,transparent);animation:fade-in 240ms ease-out both}.inspector{position:fixed;z-index:80;inset:12px 12px 12px auto;width:min(430px,calc(100% - 24px));overflow-y:auto;color:var(--ink);background:var(--panel);box-shadow:0 0 0 1px var(--line),-28px 0 90px color-mix(in srgb,var(--ink) 18%,transparent);animation:inspector-in 260ms cubic-bezier(.22,1,.36,1) both}.inspector>header{position:sticky;z-index:2;top:0;display:flex;align-items:start;justify-content:space-between;padding:24px;box-shadow:0 1px var(--line);background:color-mix(in srgb,var(--panel) 94%,transparent);backdrop-filter:blur(12px)}span{color:var(--muted);font-family:"IBM Plex Mono",monospace;font-size:8px;letter-spacing:.07em;text-transform:uppercase}h2,p,blockquote{margin:0}h2{margin-top:7px;font-family:"Instrument Serif",Georgia,serif;font-size:34px;font-weight:400;letter-spacing:-.035em}.inspector>header button{display:grid;width:34px;height:34px;place-items:center;border:0;box-shadow:0 0 0 1px var(--line);color:var(--ink);background:transparent;cursor:pointer}.event-summary,.payload{background:color-mix(in srgb,var(--accent) 6%,var(--paper))}.event-summary>strong,.payload blockquote{display:block;margin:14px 0 7px;font-family:"Instrument Serif",Georgia,serif;font-size:22px;font-weight:400;line-height:1.25;text-wrap:pretty}.payload blockquote{max-height:160px;overflow:auto;padding:0;border:0;color:var(--ink);font-family:"IBM Plex Mono",monospace;font-size:11px;line-height:1.55;white-space:pre-wrap;word-break:break-word}.event-summary p,.payload p{color:var(--muted);font-size:8px;line-height:1.5}.inspector>section{padding:22px 24px;box-shadow:0 1px var(--line)}dl{position:relative;display:grid;grid-template-columns:1fr 1fr;margin:20px 0 6px;border-block:1px solid var(--line)}dl::before,dl::after{position:absolute;top:-7px;bottom:-7px;width:1px;background:var(--line);content:""}dl::before{left:0}dl::after{right:0}dl>div{min-width:0;padding:12px;box-shadow:0 1px var(--line)}dl>div:nth-child(2n){box-shadow:-1px 1px var(--line)}dt{margin-bottom:6px;color:var(--muted);font-family:"IBM Plex Mono",monospace;font-size:7px;text-transform:uppercase}dd{overflow:hidden;margin:0;font-size:9px;text-overflow:ellipsis;white-space:nowrap}pre{overflow-x:auto;margin:12px 0 0;padding:11px;color:var(--muted);background:color-mix(in srgb,var(--ink) 3%,var(--paper));font-family:"IBM Plex Mono",monospace;font-size:7px;line-height:1.55;white-space:pre-wrap;word-break:break-word}.privacy{margin:22px 24px;color:var(--muted);font-size:8px;line-height:1.6}button:focus-visible{outline:2px solid var(--accent);outline-offset:3px}@keyframes fade-in{from{opacity:0}}@keyframes inspector-in{from{opacity:.7;transform:translateX(102%)}}@media(max-width:600px){.inspector{inset:8px 8px 74px;width:auto}}@media(prefers-reduced-motion:reduce){.scrim,.inspector{animation:none}}
+    .scrim {
+        position: fixed;
+        z-index: 70;
+        inset: 0;
+        border: 0;
+        background: color-mix(in srgb, var(--ink) 28%, transparent);
+    }
+
+    .inspector {
+        position: fixed;
+        z-index: 80;
+        inset: 12px 12px 12px auto;
+        width: min(440px, calc(100% - 24px));
+        overflow-y: auto;
+        color: var(--ink);
+        background: var(--panel);
+        border-radius: 20px;
+        box-shadow: var(--shadow);
+    }
+
+    .inspector > header {
+        position: sticky;
+        z-index: 2;
+        top: 0;
+        display: flex;
+        align-items: start;
+        justify-content: space-between;
+        padding: 22px;
+        border-bottom: 1px solid var(--line);
+        background: color-mix(in srgb, var(--panel) 94%, transparent);
+        backdrop-filter: blur(12px);
+    }
+
+    h2, p, blockquote { margin: 0; }
+    h2 { margin-top: 8px; font-size: 28px; font-weight: 650; letter-spacing: -0.04em; line-height: 1.1; }
+
+    .inspector > header button {
+        display: grid;
+        width: 36px;
+        height: 36px;
+        place-items: center;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        color: var(--ink);
+        background: transparent;
+        cursor: pointer;
+    }
+
+    .event-summary, .payload { background: color-mix(in srgb, var(--accent) 6%, var(--paper)); }
+    .event-summary > strong, .payload blockquote {
+        display: block;
+        margin: 14px 0 8px;
+        font-size: 18px;
+        font-weight: 650;
+        line-height: 1.35;
+    }
+    .payload blockquote {
+        max-height: 160px;
+        overflow: auto;
+        padding: 0;
+        border: 0;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 13px;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+    .event-summary p, .payload p { color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .inspector > section { padding: 22px; border-bottom: 1px solid var(--line); }
+    dl { display: grid; grid-template-columns: 1fr 1fr; margin: 16px 0 0; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+    dl > div { min-width: 0; padding: 12px; border-bottom: 1px solid var(--line); }
+    dl > div:nth-child(2n) { border-left: 1px solid var(--line); }
+    dl > div:nth-last-child(-n+2) { border-bottom: 0; }
+    dt { margin-bottom: 6px; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+    dd { overflow: hidden; margin: 0; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+    pre {
+        overflow-x: auto;
+        margin: 12px 0 0;
+        padding: 12px;
+        border-radius: 12px;
+        color: var(--muted);
+        background: color-mix(in srgb, var(--ink) 4%, var(--paper));
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 12px;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+    .privacy { margin: 20px 22px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+
+    @media (max-width: 600px) {
+        .inspector { inset: 8px 8px 86px; width: auto; }
+    }
 </style>

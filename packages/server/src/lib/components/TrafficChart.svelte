@@ -81,7 +81,7 @@
 <figure class="m-0 font-mono text-xs text-[var(--muted)]" data-theme-chart={theme} data-mode={mode}>
     <div class="relative">
         <svg class="block h-auto w-full overflow-visible" viewBox={`0 0 ${width} ${height}`} role="img" aria-labelledby="traffic-title traffic-description">
-            <title id="traffic-title">Daily visitor velocity</title>
+            <title id="traffic-title">Visitors over time</title>
             <desc id="traffic-description">{totalVisitors.toLocaleString()} visitors, {growth.toFixed(1)} percent above the comparison period.</desc>
             <defs>
                 <linearGradient id="current-fill" x1="0" y1="0" x2="0" y2="1">
@@ -144,7 +144,7 @@
 
         {#if activeIndex !== null && points[activeIndex]}
             {@const point = points[activeIndex]}
-            <div class="pointer-events-none absolute top-4 z-[2] grid min-w-40 -translate-x-1/2 gap-2 bg-[var(--ink)] p-3 text-xs text-[var(--paper)] shadow-[0_0_0_1px_color-mix(in_srgb,var(--accent)_35%,transparent)]" style={`left:clamp(80px, ${(xAt(activeIndex) / width) * 100}%, calc(100% - 80px))`}>
+            <div class="pointer-events-none absolute top-4 z-[2] grid min-w-40 -translate-x-1/2 gap-2 rounded-xl bg-[var(--ink)] p-3 text-xs text-[var(--paper)] shadow-[var(--shadow)]" style={`left:clamp(80px, ${(xAt(activeIndex) / width) * 100}%, calc(100% - 80px))`}>
                 <strong class="font-serif text-base font-normal italic">{formatDate(point.date)}</strong>
                 <span class="flex justify-between gap-4 text-[color-mix(in_srgb,var(--paper)_70%,transparent)]">Visitors <b class="font-medium text-[var(--paper)]">{point.visitors.toLocaleString()}</b></span>
                 <span class="flex justify-between gap-4 text-[color-mix(in_srgb,var(--paper)_70%,transparent)]">Previous <b class="font-medium text-[var(--paper)]">{point.previous.toLocaleString()}</b></span>
