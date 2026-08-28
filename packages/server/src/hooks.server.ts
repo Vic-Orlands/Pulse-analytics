@@ -1,6 +1,5 @@
 import type { Handle } from "@sveltejs/kit";
-
-const publicPaths = ["/collect", "/cache", "/tracker.js", "/login"];
+import { isPublicPath } from "$lib/server/publicPaths";
 
 async function digest(value: string) {
     const bytes = new TextEncoder().encode(value);
@@ -10,7 +9,7 @@ async function digest(value: string) {
 
 export const handle: Handle = async ({ event, resolve }) => {
     const password = event.platform?.env?.DASHBOARD_PASSWORD;
-    if (!password || publicPaths.some((path) => event.url.pathname.startsWith(path))) {
+    if (!password || isPublicPath(event.url.pathname)) {
         return resolve(event);
     }
 

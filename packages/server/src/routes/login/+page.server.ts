@@ -1,6 +1,7 @@
 import { fail, redirect } from "@sveltejs/kit";
 import type { Actions, PageServerLoad } from "./$types";
 import { digest } from "../../hooks.server";
+import { safeLoginRedirect } from "$lib/server/publicPaths";
 
 export const load: PageServerLoad = async ({ platform }) => {
     if (!platform?.env?.DASHBOARD_PASSWORD && !import.meta.env.DEV) throw redirect(303, "/");
@@ -23,6 +24,6 @@ export const actions: Actions = {
             secure: true,
             maxAge: 60 * 60 * 24 * 30,
         });
-        throw redirect(303, url.searchParams.get("next") || "/");
+        throw redirect(303, safeLoginRedirect(url.searchParams.get("next")));
     },
 };

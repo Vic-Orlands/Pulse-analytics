@@ -1,6 +1,7 @@
 <script lang="ts">
     import ThemeChooser from "$lib/components/ThemeChooser.svelte";
     import { appearance } from "$lib/appearance.svelte";
+    import { resolve } from "$app/paths";
 </script>
 
 <svelte:head><title>Preferences — Pulse</title></svelte:head>
@@ -11,7 +12,7 @@
         <h1>Appearance</h1>
         <p>Theme is also available from the sidebar on every analytics page.</p>
         <ThemeChooser selected={appearance.id} onselect={(theme) => appearance.set(theme)} compact />
-        <a href="/">Return to analytics <span aria-hidden="true">→</span></a>
+        <a href={resolve("/dashboard")}>Return to analytics <span aria-hidden="true">→</span></a>
     </section>
 </main>
 

@@ -1,370 +1,283 @@
 <script lang="ts">
-    import { onMount } from "svelte";
-    import { animate, stagger } from "motion";
     import { HugeiconsIcon } from "@hugeicons/svelte";
-    import {
-        Activity01Icon,
-        ArrowDown02Icon,
-        Cancel01Icon,
-        UserGroupIcon,
-        ViewIcon,
-    } from "@hugeicons/core-free-icons";
+    import { Moon01Icon, Sun01Icon } from "@hugeicons/core-free-icons";
     import type { PageProps } from "./$types";
-    import TrafficChart from "$lib/components/TrafficChart.svelte";
-    import AppShell from "$lib/components/AppShell.svelte";
-    import InstallationSheet from "$lib/components/InstallationSheet.svelte";
-    import DimensionPanel from "$lib/components/DimensionPanel.svelte";
-    import type { CountRow } from "$lib/types";
     import { appearance } from "$lib/appearance.svelte";
-
-    type FilterKey = "pages" | "referrers" | "countries" | "devices" | "os" | "browsers";
+    import { resolve } from "$app/paths";
 
     let { data }: PageProps = $props();
-    let chartMode = $state<"bar" | "area">("area");
-    let installationOpen = $state(false);
-    let filters = $state<Partial<Record<FilterKey, string>>>({});
 
-    const compact = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
-    const formatNumber = (value: number) => compact.format(value);
-    const formatPercent = (value: number) => `${value.toFixed(1)}%`;
-    const periodLabel = $derived(
-        data.interval === "today"
-            ? "today"
-            : data.interval === "yesterday"
-                ? "yesterday"
-                : `last ${data.interval.replace("d", " days")}`,
-    );
-    const conversion = $derived(data.funnel[data.funnel.length - 1]?.rate ?? 0);
-    const growth = $derived(
-        data.stats.previousVisitors > 0
-            ? ((data.stats.visitors - data.stats.previousVisitors) / data.stats.previousVisitors) * 100
-            : 0,
-    );
-    const growthLabel = $derived(
-        data.stats.previousVisitors > 0 ? `${growth >= 0 ? "+" : ""}${growth.toFixed(1)}%` : "—",
-    );
-    const signalCount = $derived(data.events.reduce((sum, event) => sum + event.count, 0));
-    const copyRows = $derived<CountRow[]>(data.copies.map((row) => [row.snippet, row.count]));
-    const journeyRows = $derived<CountRow[]>(data.journeys.map((row) => [row.path, row.count]));
-    const chips = $derived(
-        (
-            [
-                ["pages", "Page", filters.pages],
-                ["referrers", "Referrer", filters.referrers],
-                ["countries", "Country", filters.countries],
-                ["devices", "Device", filters.devices],
-                ["os", "OS", filters.os],
-                ["browsers", "Browser", filters.browsers],
-            ] as const
-        ).filter((chip) => Boolean(chip[2])),
-    );
-
-    function toggleFilter(key: FilterKey, label: string) {
-        const next = { ...filters };
-        if (next[key] === label) delete next[key];
-        else next[key] = label;
-        filters = next;
-    }
-
-    function clearFilter(key: FilterKey) {
-        const next = { ...filters };
-        delete next[key];
-        filters = next;
-    }
-
-    function reveal() {
-        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-        animate("[data-reveal]", { opacity: [0, 1], y: [8, 0] }, { duration: 0.28, delay: stagger(0.02), ease: [0.22, 1, 0.36, 1] });
-    }
-
-    function closeInstallation() {
-        installationOpen = false;
-        window.setTimeout(() => document.getElementById("installation-trigger")?.focus(), 20);
-    }
-
-    onMount(reveal);
+    const githubUrl = "https://github.com/Vic-Orlands/pulse-analytics";
+    const ownerLabel = $derived(data.signedIn ? "Dashboard" : "Log in");
 </script>
 
 <svelte:head>
-    <title>Pulse — Analytics</title>
-    <meta name="description" content="Private web analytics for every product you ship." />
+    <title>Pulse — Private web analytics</title>
+    <meta
+        name="description"
+        content="Pulse is a personal, cookieless analytics dashboard for the sites you run on Cloudflare. No public signup."
+    />
 </svelte:head>
 
-<AppShell
-    current="dashboard"
-    siteId={data.siteId}
-    sites={data.sites}
-    interval={data.interval}
-    title="Analytics"
-    oninstall={() => (installationOpen = true)}
->
-    <div class="stack" class:dimmed={installationOpen} inert={installationOpen ? true : undefined}>
-        {#if data.warnings.length || !data.sites.length || data.alerts.length}
-            <section class="notices" data-reveal>
-                {#if data.source === "demo"}
-                    <p class="banner">Sample data is loaded for local preview. Live traffic appears after Cloudflare Analytics Engine is connected.</p>
-                {/if}
-                {#each data.warnings.filter((warning) => data.source !== "demo" || !warning.startsWith("Showing sample")) as warning (warning)}
-                    <p class="banner warn">{warning}</p>
-                {/each}
-                {#if !data.sites.length}
-                    <p class="banner">No applications yet. Open Install tracking, paste the snippet into any app, and Pulse will create it from the first pageview.</p>
-                {/if}
-                {#each data.alerts as alert (alert.id)}
-                    <article class="alert" data-severity={alert.severity}>
-                        <span>{alert.severity}</span>
-                        <div>
-                            <strong>{alert.title}</strong>
-                            <p>{alert.detail}</p>
-                        </div>
-                        <b>{alert.count}</b>
-                    </article>
-                {/each}
-            </section>
-        {/if}
-
-        <section class="panel totals" aria-label="Core metrics" data-reveal>
-            <article>
-                <span class="kicker"><HugeiconsIcon icon={UserGroupIcon} size={14} strokeWidth={1.7} />Visitors</span>
-                <strong>{formatNumber(data.stats.visitors)}</strong>
-                <small><b class:up={growth >= 0} class:down={growth < 0}>{growthLabel}</b> vs previous · {periodLabel}</small>
-            </article>
-            <article>
-                <span class="kicker"><HugeiconsIcon icon={ViewIcon} size={14} strokeWidth={1.7} />Views</span>
-                <strong>{formatNumber(data.stats.views)}</strong>
-                <small>{data.stats.pagesPerVisit.toFixed(2)} pages per visit</small>
-            </article>
-            <article>
-                <span class="kicker"><HugeiconsIcon icon={Activity01Icon} size={14} strokeWidth={1.7} />Sessions</span>
-                <strong>{formatNumber(data.stats.sessions)}</strong>
-                <small>{formatNumber(data.live.visitors)} live now</small>
-            </article>
-            <article>
-                <span class="kicker"><HugeiconsIcon icon={ArrowDown02Icon} size={14} strokeWidth={1.7} />Bounce</span>
-                <strong>{formatPercent(data.stats.bounceRate)}</strong>
-                <small>{conversion.toFixed(0)}% converted</small>
-            </article>
-        </section>
-
-        <section class="panel chart-panel" data-reveal>
-            <header class="section-head">
-                <div>
-                    <span class="kicker">Traffic</span>
-                    <h2>Visitors over time</h2>
-                </div>
-                <div class="chart-tools">
-                    <p>Current window measured against the preceding period.</p>
-                    <div class="segmented" aria-label="Chart style">
-                        <button class:active={chartMode === "bar"} aria-pressed={chartMode === "bar"} onclick={() => (chartMode = "bar")}>Bar</button>
-                        <button class:active={chartMode === "area"} aria-pressed={chartMode === "area"} onclick={() => (chartMode = "area")}>Area</button>
-                    </div>
-                </div>
-            </header>
-            <TrafficChart data={data.series} theme={appearance.id} mode={chartMode} />
-        </section>
-
-        {#if chips.length}
-            <div class="chips">
-                {#each chips as [key, name, value] (key)}
-                    <button type="button" onclick={() => clearFilter(key)}>
-                        <span>{name}</span>
-                        <strong>{value}</strong>
-                        <HugeiconsIcon icon={Cancel01Icon} size={12} strokeWidth={2} />
-                    </button>
-                {/each}
-                <p>Highlights the selected row. Other panels still show the full period until live filtering is connected.</p>
-            </div>
-        {/if}
-
-        <section class="breakdowns" aria-label="Audience breakdown" data-reveal>
-            <div class="breakdown-top">
-                <DimensionPanel
-                    groups={[
-                        { id: "pages", label: "Pages", rows: data.pages, empty: "No pages in this period." },
-                        { id: "routes", label: "Routes", rows: data.routes, empty: "No route patterns in this period." },
-                        { id: "hostnames", label: "Hostnames", rows: data.hostnames, empty: "No hostnames in this period." },
-                    ]}
-                    selected={filters.pages ?? ""}
-                    onselect={(label) => toggleFilter("pages", label)}
-                />
-                <DimensionPanel
-                    groups={[
-                        { id: "referrers", label: "Referrers", rows: data.referrers, empty: "No referring sources in this period." },
-                        { id: "source", label: "UTM", rows: data.utmSources, empty: "No UTM parameters in this period." },
-                    ]}
-                    marker="referrer"
-                    selected={filters.referrers ?? ""}
-                    onselect={(label) => toggleFilter("referrers", label)}
-                />
-            </div>
-            <div class="breakdown-bottom">
-                <DimensionPanel
-                    groups={[
-                        { id: "countries", label: "Countries", rows: data.countries, empty: "Geography appears as traffic arrives." },
-                        { id: "regions", label: "Regions", rows: data.regions, empty: "Regions appear as traffic spreads." },
-                    ]}
-                    marker="country"
-                    format="percent"
-                    selected={filters.countries ?? ""}
-                    onselect={(label) => toggleFilter("countries", label)}
-                />
-                <DimensionPanel
-                    groups={[
-                        { id: "devices", label: "Devices", rows: data.devices, empty: "No device data in this period.", marker: "device" },
-                        { id: "browsers", label: "Browsers", rows: data.browsers, empty: "No browser data in this period.", marker: "browser" },
-                    ]}
-                    format="percent"
-                    selected={filters.devices ?? filters.browsers ?? ""}
-                    onselect={(label, groupId) => toggleFilter(groupId === "browsers" ? "browsers" : "devices", label)}
-                />
-                <DimensionPanel
-                    groups={[
-                        { id: "os", label: "Operating systems", rows: data.operatingSystems, empty: "No operating system data in this period." },
-                    ]}
-                    marker="os"
-                    format="percent"
-                    selected={filters.os ?? ""}
-                    onselect={(label) => toggleFilter("os", label)}
-                />
-            </div>
-        </section>
-
-        <section class="breakdowns" aria-label="Session paths" data-reveal>
-            <div class="breakdown-top">
-                <DimensionPanel
-                    groups={[{ id: "entries", label: "Entry pages", rows: data.entries, empty: "No landing pages in this period." }]}
-                />
-                <DimensionPanel
-                    groups={[{ id: "exits", label: "Exit pages", rows: data.exits, empty: "No exit pages in this period." }]}
-                />
-            </div>
-            <div class="breakdown-bottom">
-                <DimensionPanel
-                    groups={[
-                        { id: "source", label: "UTM source", rows: data.utmSources, empty: "No UTM source in this period." },
-                        { id: "medium", label: "Medium", rows: data.utmMediums, empty: "No UTM medium in this period." },
-                        { id: "campaign", label: "Campaign", rows: data.utmCampaigns, empty: "No UTM campaign in this period." },
-                    ]}
-                />
-                <DimensionPanel
-                    groups={[{ id: "bounce", label: "Bounce by landing", rows: data.bounceByLanding, empty: "No bounce-by-landing data in this period." }]}
-                />
-                <DimensionPanel
-                    groups={[{ id: "journeys", label: "Journeys", rows: journeyRows, empty: "Journeys appear after sessions include a page path." }]}
-                    preview={6}
-                />
-            </div>
-        </section>
-
-        <section class="breakdown-bottom" aria-label="Actions" data-reveal>
-            <DimensionPanel
-                groups={[{ id: "copies", label: "Copied text", rows: copyRows, empty: "Copied snippets appear after visitors copy text." }]}
-            />
-            <DimensionPanel
-                groups={[{ id: "outbound", label: "Outbound clicks", rows: data.outbound, empty: "No outbound clicks in this period." }]}
-                marker="referrer"
-            />
-            <DimensionPanel
-                groups={[{ id: "downloads", label: "Downloads", rows: data.downloads, empty: "No file downloads in this period." }]}
-            />
-        </section>
-
-        <section class="panel funnel" data-reveal>
-            <header class="section-head"><div><span class="kicker">Funnel</span><h2>Landed to action</h2></div></header>
-            <div class="funnel-steps">
-                {#each data.funnel as step, index (step.label)}
-                    <article>
-                        <span class="kicker">{String(index + 1).padStart(2, "0")}</span>
-                        <h3>{step.label}</h3>
-                        <strong>{formatNumber(step.count)}</strong>
-                        <small>{step.rate.toFixed(0)}% of sessions</small>
-                        <i style={`--share:${Math.max(8, step.rate)}%`}></i>
-                    </article>
-                {/each}
-            </div>
-        </section>
-
-        <a class="panel ledger-callout" href={`/signals?site=${encodeURIComponent(data.siteId)}&interval=${encodeURIComponent(data.interval)}`} data-reveal>
-            <div>
-                <span class="kicker">Event intelligence</span>
-                <h2>Open the signal ledger</h2>
-                <p>Review screenshot captures, copy actions, scraping detections, and the interactions around them.</p>
-            </div>
-            <strong>{signalCount} signals <span aria-hidden="true">↗</span></strong>
+<div class="home">
+    <header class="top">
+        <a class="brand" href={resolve("/")} aria-label="Pulse home">
+            <span class="pulse-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+            Pulse
         </a>
-    </div>
-</AppShell>
-<InstallationSheet open={installationOpen} onclose={closeInstallation} />
+        <nav aria-label="Site">
+            <a class="ghost" href={githubUrl} target="_blank" rel="noreferrer">
+                <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+                    <path
+                        fill="currentColor"
+                        d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82A7.68 7.68 0 0 1 8 4.77c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"
+                    />
+                </svg>
+                GitHub
+            </a>
+            <a class="login" href={resolve(data.signedIn ? "/dashboard" : "/login")}>{ownerLabel}</a>
+            <button type="button" class="ghost icon" onclick={() => appearance.toggle()} aria-label="Toggle theme">
+                <HugeiconsIcon icon={appearance.id === "signal" ? Sun01Icon : Moon01Icon} size={16} strokeWidth={1.7} />
+            </button>
+        </nav>
+    </header>
+
+    <section class="intro">
+        <p class="kicker">Personal analytics</p>
+        <h1>Privacy-friendly analytics for the sites you run</h1>
+        <p class="lede">
+            Pulse is a private, multi-site dashboard on Cloudflare Workers and Analytics Engine.
+            It measures visitors, views, sessions, and traffic sources without cookies or personal data.
+            This is a personal app: there is no public signup.
+        </p>
+        <div class="actions">
+            <a class="login" href={resolve(data.signedIn ? "/dashboard" : "/login")}>{ownerLabel}</a>
+            <a class="ghost" href={githubUrl} target="_blank" rel="noreferrer">View on GitHub</a>
+        </div>
+        <p class="note">Owner login only. Visitors can read about Pulse and watch the product walkthrough.</p>
+    </section>
+
+    <section class="showcase" aria-labelledby="showcase-title">
+        <p class="kicker">Product insight</p>
+        <h2 id="showcase-title">Inside the Pulse dashboard</h2>
+        <p class="lede">
+            Compact Inter type, a quiet sidebar, and the analytics grid — the same surface used to
+            read live traffic.
+        </p>
+        <figure class="panel stage">
+            <video
+                src="/pulse-preview.mp4"
+                controls
+                autoplay
+                muted
+                loop
+                playsinline
+                preload="metadata"
+            >
+                Your browser cannot play this video.
+            </video>
+            <figcaption>Pulse dashboard walkthrough: sidebar, type scale, and analytics views.</figcaption>
+        </figure>
+    </section>
+
+    <section class="about" aria-labelledby="about-title">
+        <p class="kicker">About</p>
+        <h2 id="about-title">What Pulse tracks, and what it does not</h2>
+        <ul>
+            <li>
+                <strong>Cookieless by design.</strong>
+                Page views, visitors, sessions, bounce rate, pages, referrers, campaigns, countries,
+                and devices — without names, emails, or raw IP addresses.
+            </li>
+            <li>
+                <strong>You run the worker.</strong>
+                A Cloudflare Worker serves both the tracker and the dashboard. The first pageview
+                creates an app automatically.
+            </li>
+            <li>
+                <strong>Owner access only.</strong>
+                GitHub is public. The dashboard is not. There is no account creation flow.
+            </li>
+        </ul>
+    </section>
+
+    <footer>
+        <span>MIT · Pulse Analytics</span>
+        <a href={githubUrl} target="_blank" rel="noreferrer">GitHub</a>
+        <a href={resolve("/login")}>Log in</a>
+    </footer>
+</div>
 
 <style>
-    .dimmed { opacity: 0.46; transition: opacity 220ms ease; }
-    .notices { display: grid; gap: 10px; }
-    .banner, .alert { margin: 0; padding: 14px 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); font-size: 13px; line-height: 1.5; }
-    .banner.warn, .alert[data-severity="warning"], .alert[data-severity="critical"] { border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); }
-    .alert { display: grid; grid-template-columns: auto 1fr auto; gap: 8px 14px; align-items: start; }
-    .alert span, .alert b { color: var(--accent); font-size: 11px; text-transform: uppercase; }
-    .alert p { margin: 4px 0 0; color: var(--muted); }
-    .totals { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
-    .totals article { min-width: 0; padding: 18px 20px 16px; }
-    .totals article + article { border-left: 1px solid var(--line); }
-    .totals .kicker { color: var(--muted); }
-    .totals .kicker :global(svg) { color: var(--accent); }
-    .totals strong { display: block; margin: 8px 0 6px; font-size: var(--text-lg); font-weight: 600; line-height: 1.3; letter-spacing: -0.02em; }
-    .totals small { color: var(--muted); font-size: 12px; }
-    .totals .up { color: var(--ok); }
-    .totals .down { color: var(--accent); }
-    .chart-panel, .funnel { padding: 22px 22px 16px; }
-    .section-head { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
-    .section-head h2, .ledger-callout h2, .funnel-steps h3 { margin: 4px 0 0; font-size: var(--text-lg); font-weight: 600; letter-spacing: -0.02em; }
-    .chart-tools { display: flex; max-width: 420px; align-items: center; gap: 14px; }
-    .chart-tools p { margin: 0; color: var(--muted); font-size: 13px; }
-    .chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-    .chips button {
-        display: inline-flex;
-        min-height: 32px;
+    .home {
+        width: min(960px, calc(100% - 40px));
+        margin: 0 auto;
+        padding: 20px 0 72px;
+    }
+
+    .top {
+        display: flex;
+        min-height: 56px;
         align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+    }
+
+    .brand,
+    nav,
+    .actions,
+    footer {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .brand {
+        color: var(--ink);
+        font-weight: 650;
+        text-decoration: none;
+    }
+
+    nav {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .ghost,
+    .login,
+    footer a {
+        display: inline-flex;
+        min-height: 36px;
+        align-items: center;
+        justify-content: center;
         gap: 8px;
-        padding: 0 10px;
+        padding: 0 12px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .ghost {
+        color: var(--ink);
+        background: transparent;
         border: 1px solid var(--line);
-        border-radius: 999px;
-        color: inherit;
-        background: var(--panel);
-        font-size: 12px;
         cursor: pointer;
     }
-    .chips span { color: var(--muted); }
-    .chips p { margin: 0; color: var(--muted); font-size: 12px; }
-    .breakdowns { display: grid; gap: 12px; }
-    .breakdown-top, .breakdown-bottom { display: grid; gap: 12px; }
-    .breakdown-top { grid-template-columns: 1fr 1fr; }
-    .breakdown-bottom { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .funnel-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .funnel-steps article { position: relative; min-height: 150px; padding: 8px 18px 22px; overflow: hidden; }
-    .funnel-steps article + article { border-left: 1px solid var(--line); }
-    .funnel-steps small { color: var(--muted); font-size: 12px; }
-    .funnel-steps strong { font-variant-numeric: tabular-nums; }
-    .funnel-steps i { position: absolute; bottom: 0; left: 0; width: var(--share); height: 3px; background: var(--accent); }
-    .ledger-callout { display: flex; align-items: end; justify-content: space-between; gap: 24px; padding: 24px; color: inherit; text-decoration: none; }
-    .ledger-callout p { max-width: 520px; margin: 8px 0 0; color: var(--muted); }
-    .ledger-callout strong { font-size: 12px; font-weight: 600; text-transform: uppercase; }
-    .ledger-callout strong span { color: var(--accent); }
-    .ledger-callout:hover { background: color-mix(in srgb, var(--accent) 6%, var(--panel)); }
-    [data-reveal] { opacity: 0; }
-    @media (max-width: 1100px) {
-        .breakdown-bottom { grid-template-columns: 1fr 1fr; }
-        .totals, .funnel-steps { grid-template-columns: 1fr 1fr; }
-        .totals article:nth-child(n + 3) { border-top: 1px solid var(--line); }
-        .totals article:nth-child(odd) { border-left: 0; }
-        .funnel-steps article + article { border-left: 0; border-top: 1px solid var(--line); }
+
+    .ghost.icon {
+        width: 36px;
+        padding: 0;
     }
+
+    .login {
+        color: var(--paper);
+        background: var(--ink);
+        border: 1px solid var(--ink);
+    }
+
+    .login:hover {
+        background: var(--accent);
+        border-color: var(--accent);
+    }
+
+    .intro,
+    .showcase,
+    .about {
+        margin-top: 48px;
+    }
+
+    h1,
+    h2 {
+        max-width: 34rem;
+        margin: 8px 0 12px;
+    }
+
+    .lede,
+    .note,
+    .about li,
+    figcaption {
+        max-width: 38rem;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.55;
+    }
+
+    .lede {
+        margin: 0 0 20px;
+    }
+
+    .note {
+        margin: 14px 0 0;
+        font-size: 12px;
+    }
+
+    .actions {
+        flex-wrap: wrap;
+    }
+
+    .stage {
+        margin: 20px 0 0;
+        padding: 10px;
+    }
+
+    video {
+        display: block;
+        width: 100%;
+        border-radius: 12px;
+        background: #121116;
+    }
+
+    figcaption {
+        margin: 10px 6px 6px;
+        font-size: 12px;
+    }
+
+    .about ul {
+        display: grid;
+        gap: 14px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .about li {
+        padding: 16px 18px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--panel);
+    }
+
+    .about strong {
+        display: block;
+        margin-bottom: 4px;
+        color: var(--ink);
+        font-size: 13px;
+        font-weight: 650;
+    }
+
+    footer {
+        flex-wrap: wrap;
+        margin-top: 56px;
+        color: var(--muted);
+        font-size: 12px;
+    }
+
+    footer a {
+        min-height: 28px;
+        padding: 0;
+        color: var(--ink);
+    }
+
     @media (max-width: 720px) {
-        .totals, .breakdown-top, .breakdown-bottom, .funnel-steps { grid-template-columns: 1fr; }
-        .totals article + article, .funnel-steps article + article { border-left: 0; border-top: 1px solid var(--line); }
-        .section-head { align-items: start; flex-direction: column; }
-        .chart-tools { width: 100%; max-width: none; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-        [data-reveal] { opacity: 1; }
-        .dimmed { transition: none; }
+        .home {
+            width: min(100% - 32px, 960px);
+        }
+
+        .intro,
+        .showcase,
+        .about {
+            margin-top: 36px;
+        }
     }
 </style>

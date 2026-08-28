@@ -1,6 +1,12 @@
 import type { PageServerLoad } from "./$types";
-import { getDashboardData } from "$lib/server/dashboard";
+import { digest } from "../hooks.server";
 
-export const load: PageServerLoad = async ({ url, platform }) => {
-    return getDashboardData(url, platform?.env);
+export const load: PageServerLoad = async ({ cookies, platform }) => {
+    const password = platform?.env?.DASHBOARD_PASSWORD;
+    if (!password) {
+        return { signedIn: false };
+    }
+
+    const expected = await digest(`pulse:${password}`);
+    return { signedIn: cookies.get("pulse_auth") === expected };
 };

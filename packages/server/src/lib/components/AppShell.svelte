@@ -9,6 +9,7 @@
     } from "@hugeicons/core-free-icons";
     import type { Snippet } from "svelte";
     import { appearance } from "$lib/appearance.svelte";
+    import { resolve } from "$app/paths";
 
     let {
         current,
@@ -41,12 +42,12 @@
 
 <div class="shell" data-theme={appearance.id}>
     <aside class="sidebar" aria-label="Pulse navigation">
-        <a class="brand" href={`/?${query}`} aria-label="Pulse analytics home">
+        <a class="brand" href={resolve(`/dashboard?${query}`)} aria-label="Pulse analytics home">
             <span class="pulse-mark" aria-hidden="true"><i></i><i></i><i></i></span>
             <span>Pulse</span>
         </a>
 
-        <form class="site-form" method="GET" action={current === "signals" ? "/signals" : "/"}>
+        <form class="site-form" method="GET" action={current === "signals" ? resolve("/signals") : resolve("/dashboard")}>
             <input type="hidden" name="interval" value={interval} />
             <label>
                 <span class="kicker">Application</span>
@@ -63,11 +64,11 @@
         </form>
 
         <nav class="nav">
-            <a class:active={current === "dashboard"} href={`/?${query}`}>
+            <a class:active={current === "dashboard"} href={resolve(`/dashboard?${query}`)}>
                 <HugeiconsIcon icon={Home04Icon} size={16} strokeWidth={1.7} />
                 Dashboard
             </a>
-            <a class:active={current === "signals"} href={`/signals?${query}`}>
+            <a class:active={current === "signals"} href={resolve(`/signals?${query}`)}>
                 <HugeiconsIcon icon={Activity03Icon} size={16} strokeWidth={1.7} />
                 Signals
             </a>
@@ -95,7 +96,7 @@
                 {#each periods as period (period.id)}
                     <a
                         class:active={interval === period.id}
-                        href={`${current === "signals" ? "/signals" : "/"}?site=${encodeURIComponent(siteId)}&interval=${period.id}`}
+                        href={resolve(`${current === "signals" ? "/signals" : "/dashboard"}?site=${encodeURIComponent(siteId)}&interval=${period.id}`)}
                     >
                         {period.label}
                     </a>

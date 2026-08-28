@@ -2,6 +2,7 @@
     import { enhance } from "$app/forms";
     import { onMount } from "svelte";
     import type { PageProps } from "./$types";
+    import { resolve } from "$app/paths";
 
     let { form }: PageProps = $props();
     let passwordInput: HTMLInputElement;
@@ -19,7 +20,7 @@
         <span class="pulse-mark" aria-hidden="true"><i></i><i></i><i></i></span>
         <p class="kicker">Private dashboard</p>
         <h1>Welcome back</h1>
-        <p>Enter the shared password to continue to your analytics.</p>
+        <p>Enter the owner password to open the dashboard. There is no public signup.</p>
         <form method="POST" use:enhance>
             <input class="username" name="username" value="counterscale" autocomplete="username" tabindex="-1" aria-hidden="true" />
             <label for="password">Password</label>
@@ -27,7 +28,10 @@
             {#if form?.invalid}<small id="password-error" role="alert">That password did not match. Please try again.</small>{/if}
             <button>Continue <span aria-hidden="true">→</span></button>
         </form>
-        <footer>Encrypted session · No public access</footer>
+        <footer>
+            <a href={resolve("/")}>Back to Pulse</a>
+            · Encrypted session · Owner access only
+        </footer>
     </section>
 </main>
 
@@ -128,5 +132,17 @@
         margin-top: 20px;
         color: var(--muted);
         font-size: 12px;
+    }
+
+    footer a {
+        color: var(--ink);
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    footer a {
+        color: var(--ink);
+        font-weight: 600;
+        text-decoration: none;
     }
 </style>
