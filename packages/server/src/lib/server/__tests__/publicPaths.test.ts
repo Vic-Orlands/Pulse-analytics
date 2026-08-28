@@ -5,6 +5,7 @@ describe("isPublicPath", () => {
     test("allows the homepage and owner login", () => {
         expect(isPublicPath("/")).toBe(true);
         expect(isPublicPath("/login")).toBe(true);
+        expect(isPublicPath("/login/")).toBe(true);
     });
 
     test("keeps the dashboard and ledger private", () => {

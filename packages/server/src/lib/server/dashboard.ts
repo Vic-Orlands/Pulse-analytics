@@ -12,7 +12,6 @@ import {
     countEventType,
     emptyInsights,
     presentAlerts,
-    presentCohorts,
     presentCopySnippets,
     presentFunnel,
     presentLinkRows,
@@ -36,7 +35,26 @@ const dashboardCache = new Map<
     { data: DashboardData; expiresAt: number }
 >();
 const dashboardRequests = new Map<string, Promise<DashboardData>>();
-const dashboardCacheTtlMs = 30_000;
+const dashboardCacheTtlMs = 120_000;
+const siteListCacheTtlMs = 10 * 60_000;
+const hiddenSites = new Set(["install-test", "probe"]);
+const siteListCache = new Map<string, { sites: string[]; expiresAt: number }>();
+
+export function isHiddenSite(site: string): boolean {
+    return hiddenSites.has(site.trim().toLowerCase());
+}
+
+export function clearDashboardCaches(): void {
+    dashboardCache.clear();
+    dashboardRequests.clear();
+    siteListCache.clear();
+}
+
+export function visibleSites(sites: string[]): string[] {
+    return [...new Set(sites.map((site) => site.trim()).filter(Boolean))].filter(
+        (site) => !isHiddenSite(site),
+    );
+}
 
 function normalizeRoutes(
     rows: DashboardData["pages"],
@@ -144,27 +162,62 @@ function unavailable(
     };
 }
 
+async function loadSiteList(
+    api: AnalyticsEngineAPI,
+    configuredSites: string[],
+    warnings: string[],
+): Promise<string[]> {
+    const cacheKey = configuredSites.join(",");
+    const cached = siteListCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+        return visibleSites(cached.sites);
+    }
+
+    const discoveredSites = await api
+        .getSitesOrderedByHits("90d", 50)
+        .catch((error) => {
+            const message =
+                error instanceof Error ? error.message : String(error);
+            warnings.push(
+                `apps: ${message || "Cloudflare Analytics Engine query failed"}`,
+            );
+            return [];
+        });
+    const sites = visibleSites([
+        ...configuredSites,
+        ...discoveredSites.map(([site]) => site),
+    ]);
+    siteListCache.set(cacheKey, {
+        sites,
+        expiresAt: Date.now() + siteListCacheTtlMs,
+    });
+    return sites;
+}
+
 async function loadDashboardData(
     url: URL,
     env?: App.Platform["env"],
+    surface: "dashboard" | "signals" = "dashboard",
 ): Promise<DashboardData> {
-    const configuredSites = (env?.PUBLIC_SITE_IDS || "")
-        .split(",")
-        .map((site) => site.trim())
-        .filter(Boolean);
+    const configuredSites = visibleSites(
+        (env?.PUBLIC_SITE_IDS || "").split(","),
+    );
     const requestedInterval = url.searchParams.get("interval") || "7d";
     const interval = intervals.has(requestedInterval)
         ? requestedInterval
         : "7d";
+    const requestedParam = (url.searchParams.get("site") || "").trim();
     const requestedSite =
-        url.searchParams.get("site") || configuredSites[0] || "";
+        requestedParam && !isHiddenSite(requestedParam)
+            ? requestedParam
+            : "";
 
     if (!env?.CF_ACCOUNT_ID || !env.CF_BEARER_TOKEN) {
         if (import.meta.env.DEV) {
             return demoDashboard({
-                siteId: requestedSite,
+                siteId: requestedSite || configuredSites[0] || "",
                 interval,
-                sites: configuredSites,
+                sites: visibleSites(configuredSites),
             });
         }
         return unavailable(requestedSite, interval, configuredSites);
@@ -173,22 +226,11 @@ async function loadDashboardData(
     const warnings: string[] = [];
     try {
         const api = new AnalyticsEngineAPI(env.CF_ACCOUNT_ID, env.CF_BEARER_TOKEN);
-    const discoveredSites = await api
-        .getSitesOrderedByHits("90d", 50)
-        .catch((error) => {
-            const message =
-                error instanceof Error ? error.message : String(error);
-            warnings.push(
-                `app discovery: ${message || "Cloudflare Analytics Engine query failed"}`,
-            );
-            return [];
-        });
-    const sites = Array.from(
-        new Set([...configuredSites, ...discoveredSites.map(([site]) => site)]),
-    ).filter(Boolean);
-    const siteId = sites.includes(requestedSite)
-        ? requestedSite
-        : sites[0] || requestedSite;
+    const sitesPromise = loadSiteList(api, configuredSites, warnings);
+    let siteIdGuess = requestedSite || configuredSites[0] || "";
+    if (!siteIdGuess) {
+        siteIdGuess = (await sitesPromise)[0] || "";
+    }
     const range = rangeFor(interval);
     const rangeDuration = range.end.diff(range.start, "millisecond");
     const previousRange = {
@@ -197,13 +239,13 @@ async function loadDashboardData(
     };
     const timezone = "Africa/Lagos";
 
-    if (!siteId) {
+    if (!siteIdGuess) {
         return {
             ...unavailable(
                 "",
                 interval,
                 [],
-                "Install the tracking snippet in any app. The first pageview creates it here automatically.",
+                "Install tracking to create an app.",
             ),
             source: "live",
         };
@@ -225,7 +267,30 @@ async function loadDashboardData(
         }
     };
 
+    if (surface === "signals") {
+        const [sites, eventRows] = await Promise.all([
+            sitesPromise,
+            note("events", [], api.getEvents(siteIdGuess, interval, timezone)),
+        ]);
+        const siteId = sites.includes(siteIdGuess)
+            ? siteIdGuess
+            : sites[0] || siteIdGuess;
+        if (
+            eventRows.length === 0 &&
+            warnings.some((warning) => warning.startsWith("events:"))
+        ) {
+            warnings.push("Signals could not load.");
+        }
+        return {
+            ...unavailable(siteId, interval, sites),
+            source: "live",
+            events: presentEvents(eventRows),
+            warnings,
+        };
+    }
+
     const [
+        sites,
         counts,
         sessionCount,
         seriesRows,
@@ -236,10 +301,8 @@ async function loadDashboardData(
         countries,
         regions,
         browsers,
-        browserVersions,
         operatingSystems,
         devices,
-        eventRows,
         sessionPaths,
         liveRows,
         copyRows,
@@ -250,19 +313,19 @@ async function loadDashboardData(
         utmSources,
         utmMediums,
         utmCampaigns,
-        visitorCohorts,
     ] = await Promise.all([
+        sitesPromise,
         note(
             "counts",
             { views: 0, visitors: 0, bounces: 0 },
-            api.getCounts(siteId, interval, timezone),
+            api.getCounts(siteIdGuess, interval, timezone),
         ),
-        note("sessions", 0, api.getSessionCount(siteId, interval, timezone)),
+        note("sessions", 0, api.getSessionCount(siteIdGuess, interval, timezone)),
         note(
             "series",
             [],
             api.getViewsGroupedByInterval(
-                siteId,
+                siteIdGuess,
                 range.type,
                 range.start.toDate(),
                 range.end.toDate(),
@@ -273,7 +336,7 @@ async function loadDashboardData(
             "previous-series",
             [],
             api.getViewsGroupedByInterval(
-                siteId,
+                siteIdGuess,
                 range.type,
                 previousRange.start.toDate(),
                 previousRange.end.toDate(),
@@ -283,85 +346,81 @@ async function loadDashboardData(
         note(
             "pages",
             [],
-            api.getCountByPath(siteId, interval, timezone, {}, 1, 20),
+            api.getCountByPath(siteIdGuess, interval, timezone, {}, 1, 20),
         ),
         note(
             "hosts",
             [],
-            api.getCountByHost(siteId, interval, timezone, {}, 1, 20),
+            api.getCountByHost(siteIdGuess, interval, timezone, {}, 1, 20),
         ),
         note(
             "referrers",
             [],
-            api.getCountByReferrer(siteId, interval, timezone, {}, 1, 20),
+            api.getCountByReferrer(siteIdGuess, interval, timezone, {}, 1, 20),
         ),
         note(
             "countries",
             [],
-            api.getCountByCountry(siteId, interval, timezone),
+            api.getCountByCountry(siteIdGuess, interval, timezone),
         ),
-        note("regions", [], api.getCountByRegion(siteId, interval, timezone)),
-        note("browsers", [], api.getCountByBrowser(siteId, interval, timezone)),
-        note(
-            "browser-versions",
-            [],
-            api.getCountByBrowserVersion(siteId, interval, timezone),
-        ),
+        note("regions", [], api.getCountByRegion(siteIdGuess, interval, timezone)),
+        note("browsers", [], api.getCountByBrowser(siteIdGuess, interval, timezone)),
         note(
             "operating-systems",
             [],
-            api.getCountByOperatingSystem(siteId, interval, timezone),
+            api.getCountByOperatingSystem(siteIdGuess, interval, timezone),
         ),
         note(
             "devices",
             [],
-            api.getCountByDeviceType(siteId, interval, timezone),
+            api.getCountByDeviceType(siteIdGuess, interval, timezone),
         ),
-        note("events", [], api.getEvents(siteId, interval, timezone)),
-        note("journeys", [], api.getSessionPaths(siteId, interval, timezone)),
-        note("live", [], api.getLiveActivity(siteId)),
+        note("journeys", [], api.getSessionPaths(siteIdGuess, interval, timezone)),
+        note("live", [], api.getLiveActivity(siteIdGuess)),
         note(
             "copies",
             [],
-            api.getEventValues(siteId, interval, "copy", timezone),
+            api.getEventValues(siteIdGuess, interval, "copy", timezone),
         ),
         note(
             "outbound",
             [],
-            api.getEventValues(siteId, interval, "outbound", timezone),
+            api.getEventValues(siteIdGuess, interval, "outbound", timezone),
         ),
         note(
             "downloads",
             [],
-            api.getEventValues(siteId, interval, "download", timezone),
+            api.getEventValues(siteIdGuess, interval, "download", timezone),
         ),
         note(
             "event-types",
             [],
-            api.getEventTypeCounts(siteId, interval, timezone),
+            api.getEventTypeCounts(siteIdGuess, interval, timezone),
         ),
         note(
             "converted-sessions",
             [],
-            api.getConvertedSessions(siteId, interval, timezone),
+            api.getConvertedSessions(siteIdGuess, interval, timezone),
         ),
         note(
             "utm-source",
             [],
-            api.getCountByUtmSource(siteId, interval, timezone),
+            api.getCountByUtmSource(siteIdGuess, interval, timezone),
         ),
         note(
             "utm-medium",
             [],
-            api.getCountByUtmMedium(siteId, interval, timezone),
+            api.getCountByUtmMedium(siteIdGuess, interval, timezone),
         ),
         note(
             "utm-campaign",
             [],
-            api.getCountByUtmCampaign(siteId, interval, timezone),
+            api.getCountByUtmCampaign(siteIdGuess, interval, timezone),
         ),
-        note("cohorts", [], api.getVisitorCohorts(siteId)),
     ]);
+    const siteId = sites.includes(siteIdGuess)
+        ? siteIdGuess
+        : sites[0] || siteIdGuess;
 
     const sessions = sessionCount || counts.visitors;
     const bounceRate =
@@ -376,11 +435,6 @@ async function loadDashboardData(
     const copies = presentCopySnippets(copyRows);
     const outbound = presentLinkRows(outboundRows);
     const downloads = presentLinkRows(downloadRows);
-    const cohorts = presentCohorts(
-        visitorCohorts,
-        range.start.toDate(),
-        range.end.toDate(),
-    );
     const funnel = presentFunnel({
         sessions,
         engagedSessions: sessionInsights.engagedSessions,
@@ -395,22 +449,10 @@ async function loadDashboardData(
     });
 
     if (counts.views > 0 && labeledPages.length === 0) {
-        warnings.push(
-            "Pageviews were recorded, but the pages query returned no rows.",
-        );
+        warnings.push("Pageviews recorded, but no pages came back.");
     }
     if (counts.views > 0 && referrers.length === 0) {
-        warnings.push(
-            "Pageviews were recorded, but the referrer query returned no rows.",
-        );
-    }
-    if (
-        eventRows.length === 0 &&
-        warnings.some((warning) => warning.startsWith("events:"))
-    ) {
-        warnings.push(
-            "Signal Ledger could not read eventsDataset. Confirm the WEB_EVENTS_AE Worker binding is deployed.",
-        );
+        warnings.push("Pageviews recorded, but no referrers came back.");
     }
 
     return {
@@ -442,10 +484,10 @@ async function loadDashboardData(
         countries,
         regions,
         browsers,
-        browserVersions,
+        browserVersions: [],
         operatingSystems,
         devices,
-        events: presentEvents(eventRows),
+        events: [],
         live,
         journeys: sessionInsights.journeys,
         entries: sessionInsights.entries,
@@ -459,7 +501,7 @@ async function loadDashboardData(
         funnel,
         bounceByLanding: sessionInsights.bounceByLanding,
         alerts,
-        cohorts,
+        cohorts: { newVisitors: 0, returningVisitors: 0 },
         warnings,
     };
     } catch (error) {
@@ -477,12 +519,14 @@ async function loadDashboardData(
 export async function getDashboardData(
     url: URL,
     env?: App.Platform["env"],
+    surface: "dashboard" | "signals" = "dashboard",
 ): Promise<DashboardData> {
     const cacheKey = [
         env?.CF_ACCOUNT_ID || "",
         env?.PUBLIC_SITE_IDS || "",
         url.searchParams.get("site") || "",
         url.searchParams.get("interval") || "7d",
+        surface,
     ].join(":");
     const cached = dashboardCache.get(cacheKey);
     if (cached && cached.expiresAt > Date.now()) return cached.data;
@@ -490,7 +534,7 @@ export async function getDashboardData(
     const pending = dashboardRequests.get(cacheKey);
     if (pending) return pending;
 
-    const request = loadDashboardData(url, env);
+    const request = loadDashboardData(url, env, surface);
     dashboardRequests.set(cacheKey, request);
 
     try {

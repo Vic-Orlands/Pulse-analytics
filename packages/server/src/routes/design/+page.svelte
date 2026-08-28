@@ -164,8 +164,7 @@
         width: 50px;
         height: 50px;
         border-radius: 50%;
-        background: repeating-conic-gradient(#63656c 0deg 5deg, transparent 5deg 12deg);
-        mask: radial-gradient(circle, transparent 0 12px, #000 13px 20px, transparent 21px);
+        background: var(--line);
         opacity: 0.95;
         animation: turn 9s linear infinite;
     }
@@ -178,7 +177,7 @@
     h2 {
         margin: 0;
         font-family: inherit;
-        font-weight: 600;
+        font-weight: 500;
         letter-spacing: -0.02em;
     }
 
@@ -196,7 +195,7 @@
         margin: 36px 0 0;
         color: #a4a3aa;
         font-size: 14px;
-        font-weight: 560;
+        font-weight: 400;
         line-height: 1.55;
         letter-spacing: -0.025em;
     }
@@ -210,7 +209,7 @@
     .intro-links a {
         color: #929198;
         font-size: 17px;
-        font-weight: 650;
+        font-weight: 500;
         text-decoration: none;
         letter-spacing: -0.025em;
         transition: color 140ms ease;
@@ -224,8 +223,7 @@
         width: 100%;
         height: 18px;
         margin-top: 65px;
-        background: repeating-linear-gradient(135deg, #1b1c20 0 2px, transparent 2px 11px);
-        mask-image: linear-gradient(90deg, #000 0%, #000 77%, transparent 96%);
+        background: var(--line);
     }
 
     .resources {
@@ -259,7 +257,7 @@
         color: #aaa9b0;
         background: rgba(7, 7, 9, 0.7);
         font-size: 17px;
-        font-weight: 650;
+        font-weight: 500;
     }
 
     .search input {

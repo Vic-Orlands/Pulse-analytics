@@ -24,7 +24,7 @@
     </header>
 
     {#if rows.length === 0}
-        <p class="empty-copy">No traffic recorded for this period.</p>
+        <p class="empty-copy">No traffic</p>
     {:else}
         <ol>
             {#each rows.slice(0, 6) as row, index}
@@ -46,7 +46,7 @@
 <style>
     .ranking { min-width: 0; padding: 16px 16px 8px; }
     header { display: flex; align-items: end; justify-content: space-between; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
-    h2 { margin: 6px 0 0; font-size: var(--text-lg); font-weight: 600; letter-spacing: -0.02em; }
+    h2 { margin: 6px 0 0; font-size: var(--text-lg); font-weight: 500; letter-spacing: -0.02em; }
     ol { margin: 0; padding: 0; list-style: none; }
     li {
         display: grid;
@@ -58,7 +58,7 @@
     }
     .rank, strong { color: var(--muted); font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums; }
     .label { min-width: 0; }
-    .label > span { display: block; overflow: hidden; color: var(--ink); font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+    .label > span { display: block; overflow: hidden; color: var(--ink); font-size: 13px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
     .plot { position: relative; height: 2px; margin-top: 8px; background: var(--line); border-radius: 99px; }
     .plot i { position: absolute; top: -3px; left: var(--position); width: 8px; height: 8px; border-radius: 50%; background: var(--accent); transform: translateX(-50%); }
     strong { color: var(--ink); }

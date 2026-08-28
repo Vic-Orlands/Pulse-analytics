@@ -11,12 +11,17 @@ const PUBLIC_EXACT = new Set([
 const PUBLIC_PREFIXES = ["/collect", "/cache", "/login"];
 
 export function isPublicPath(pathname: string): boolean {
-    if (PUBLIC_EXACT.has(pathname)) {
+    const normalized = pathname.replace(/\/+$/, "") || "/";
+    if (PUBLIC_EXACT.has(pathname) || PUBLIC_EXACT.has(normalized)) {
         return true;
     }
 
     return PUBLIC_PREFIXES.some(
-        (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+        (prefix) =>
+            pathname === prefix ||
+            normalized === prefix ||
+            pathname.startsWith(`${prefix}/`) ||
+            normalized.startsWith(`${prefix}/`),
     );
 }
 

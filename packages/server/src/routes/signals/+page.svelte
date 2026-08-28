@@ -24,12 +24,12 @@
         download: "Download",
     } as const;
     const descriptions = {
-        screenshot: "Captures from monitored pages",
-        copy: "Text copied from high-intent pages",
-        scrape: "Automated extraction patterns",
-        interaction: "Actions beyond ordinary navigation",
-        outbound: "Clicks that left the property",
-        download: "File downloads from links",
+        screenshot: "Captures",
+        copy: "Copied text",
+        scrape: "Scraping",
+        interaction: "Clicks",
+        outbound: "Leaves",
+        download: "Files",
     } as const;
 
     function closeOverlay() {
@@ -48,7 +48,7 @@
 
 <svelte:head>
     <title>Pulse — Signals</title>
-    <meta name="description" content="High-intent analytics events: copies, screenshots, outbound clicks, and downloads." />
+    <meta name="description" content="Event log for Pulse." />
 </svelte:head>
 
 <AppShell
@@ -62,9 +62,9 @@
     <div class="stack" class:dimmed={overlayOpen} inert={overlayOpen ? true : undefined}>
         <section class="hero panel" data-reveal>
             <div>
-                <p class="kicker">Event ledger</p>
-                <h2>What people did, not just where they went.</h2>
-                <p>Copies, screenshots, outbound clicks, downloads, and scraping patterns for {data.siteId || "this app"}.</p>
+                <p class="kicker">Events</p>
+                <h2>Activity</h2>
+                <p>{data.siteId || "This app"}</p>
             </div>
             <div class="total">
                 <span class="kicker">Observed</span>
@@ -87,15 +87,15 @@
         <section class="panel register" data-reveal>
             <header>
                 <div>
-                    <span class="kicker">{filter === "all" ? "All classifications" : names[filter]}</span>
-                    <h2>Activity</h2>
+                    <span class="kicker">{filter === "all" ? "All" : names[filter]}</span>
+                    <h2>Log</h2>
                 </div>
-                <button class="all-filter" class:active={filter === "all"} onclick={() => (filter = "all")} aria-pressed={filter === "all"}>All signals</button>
+                <button class="all-filter" class:active={filter === "all"} onclick={() => (filter = "all")} aria-pressed={filter === "all"}>All</button>
             </header>
 
             <div class="table-head">
                 <span>Signal</span>
-                <span>What was registered</span>
+                <span>What</span>
                 <span>Page</span>
                 <span>Origin</span>
                 <span>Device</span>
@@ -122,8 +122,8 @@
                     </button>
                 {:else}
                     <div class="empty">
-                        <h3>No classified signals yet</h3>
-                        <p>Copy actions, screenshots, and other events appear here with the captured content, page, device, and region.</p>
+                        <h3>No signals</h3>
+                        <p>Events show up here.</p>
                         {#if data.warnings.length}
                             <p>{data.warnings.join(" · ")}</p>
                         {/if}
@@ -139,24 +139,24 @@
 <style>
     .dimmed { opacity: 0.46; transition: opacity 220ms ease; }
     .hero { display: flex; align-items: end; justify-content: space-between; gap: 24px; padding: 20px; }
-    .hero h2 { margin: 6px 0; font-size: var(--text-lg); font-weight: 600; letter-spacing: -0.02em; line-height: 1.3; }
+    .hero h2 { margin: 6px 0; font-size: var(--text-lg); font-weight: 500; letter-spacing: -0.02em; line-height: 1.3; }
     .hero p { max-width: 520px; margin: 0; color: var(--muted); }
     .total { display: grid; justify-items: end; gap: 6px; }
-    .total strong { font-size: var(--text-lg); font-weight: 600; letter-spacing: -0.02em; }
+    .total strong { font-size: var(--text-lg); font-weight: 500; letter-spacing: -0.02em; }
     .filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
     .filters button { display: grid; min-height: 112px; align-content: start; padding: 16px; border: 1px solid var(--line); color: inherit; background: var(--panel); text-align: left; cursor: pointer; }
     .filters button.active, .filters button:hover { border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); background: color-mix(in srgb, var(--accent) 6%, var(--panel)); }
     .filters i, .classification i { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
     i[data-type="copy"] { background: var(--comparison); }
     i[data-type="scrape"] { background: var(--warn); }
-    i[data-type="interaction"] { background: #7f8ed6; }
+    i[data-type="interaction"] { background: var(--muted); }
     i[data-type="outbound"] { background: var(--ok); }
-    i[data-type="download"] { background: #8a6bb5; }
-    .filters strong { margin: 10px 0 8px; font-size: var(--text-lg); font-weight: 600; }
+    i[data-type="download"] { background: var(--ink); }
+    .filters strong { margin: 10px 0 8px; font-size: var(--text-lg); font-weight: 500; }
     .filters small { color: var(--muted); font-size: 12px; line-height: 1.45; }
     .register > header { display: flex; align-items: end; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--line); }
-    .register h2 { margin: 4px 0 0; font-size: var(--text-lg); font-weight: 600; }
-    .all-filter { min-height: 34px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); background: transparent; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .register h2 { margin: 4px 0 0; font-size: var(--text-lg); font-weight: 500; }
+    .all-filter { min-height: 34px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); background: transparent; font-size: 12px; font-weight: 500; cursor: pointer; }
     .all-filter.active { color: var(--paper); background: var(--ink); }
     .table-head, .rows > button { display: grid; grid-template-columns: 0.8fr 1.7fr 0.8fr 0.9fr 0.9fr 0.4fr 0.7fr; align-items: center; gap: 12px; }
     .table-head { padding: 12px 20px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
@@ -165,11 +165,11 @@
     .classification { display: flex; align-items: center; gap: 8px; margin: 0; }
     .classification span { color: var(--muted); font-size: 12px; }
     .payload { min-width: 0; display: grid; gap: 6px; }
-    .payload strong { overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+    .payload strong { overflow: hidden; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
     .payload code, .page { display: block; overflow: hidden; max-width: 100%; color: var(--muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
     .payload code { padding: 4px 6px; color: var(--ink); background: color-mix(in srgb, var(--ink) 5%, transparent); border-radius: 6px; }
     .origin, .device, .when { overflow: hidden; color: var(--muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
-    .count { font-size: var(--text-lg); font-weight: 600; }
+    .count { font-size: var(--text-lg); font-weight: 500; }
     .empty { display: grid; place-items: center; padding: 64px 20px; text-align: center; }
     .empty h3 { margin: 0 0 8px; font-size: var(--text-lg); }
     .empty p { max-width: 460px; margin: 0; color: var(--muted); }

@@ -8,11 +8,11 @@
 
 <main>
     <section class="panel">
-        <p class="kicker">Pulse / Preferences</p>
+        <p class="kicker">Preferences</p>
         <h1>Appearance</h1>
-        <p>Theme is also available from the sidebar on every analytics page.</p>
+        <p>Theme is also in the sidebar.</p>
         <ThemeChooser selected={appearance.id} onselect={(theme) => appearance.set(theme)} compact />
-        <a href={resolve("/dashboard")}>Return to analytics <span aria-hidden="true">→</span></a>
+        <a href={resolve("/dashboard")}>Back to analytics <span aria-hidden="true">→</span></a>
     </section>
 </main>
 
@@ -32,7 +32,7 @@
     h1 {
         margin: 10px 0 12px;
         font-size: var(--text-lg);
-        font-weight: 600;
+        font-weight: 500;
         letter-spacing: -0.02em;
     }
 
@@ -50,7 +50,7 @@
         border-radius: 12px;
         color: var(--paper);
         background: var(--ink);
-        font-weight: 650;
+        font-weight: 500;
         text-decoration: none;
     }
 </style>

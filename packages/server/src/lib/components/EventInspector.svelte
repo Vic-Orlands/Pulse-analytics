@@ -38,23 +38,23 @@
 
         {#if (event.type === "copy" || event.type === "outbound" || event.type === "download") && event.detail}
             <section class="payload">
-                <span class="kicker">{event.type === "copy" ? "Copied content" : event.type === "outbound" ? "Destination" : "Downloaded file"}</span>
+                <span class="kicker">{event.type === "copy" ? "Copied" : event.type === "outbound" ? "Link" : "File"}</span>
                 <blockquote>{event.detail}</blockquote>
-                <p>Captured from {meaningful(event.visitor.path)} · {event.origin} · {event.device}</p>
+                <p>{meaningful(event.visitor.path)} · {event.origin} · {event.device}</p>
             </section>
         {:else}
             <section class="event-summary">
-                <span class="kicker">Observed signal</span>
+                <span class="kicker">Signal</span>
                 <strong>{event.target}</strong>
                 <p>{new Date(event.occurredAt).toLocaleString()} · {event.count.toLocaleString()} observations · {event.origin} · {event.device}</p>
             </section>
         {/if}
 
         <section>
-            <span class="kicker">Where it was registered</span>
+            <span class="kicker">Page</span>
             <dl>
                 <div><dt>Page</dt><dd>{meaningful(event.visitor.path)}</dd></div>
-                <div><dt>Target surface</dt><dd>{meaningful(event.target)}</dd></div>
+                <div><dt>Target</dt><dd>{meaningful(event.target)}</dd></div>
                 <div><dt>Country</dt><dd>{meaningful(event.visitor.country)}</dd></div>
                 <div><dt>Region</dt><dd>{meaningful(event.visitor.region)}</dd></div>
                 <div><dt>City</dt><dd>{meaningful(event.visitor.city)}</dd></div>
@@ -62,17 +62,17 @@
             </dl>
         </section>
         <section>
-            <span class="kicker">Device &amp; client</span>
+            <span class="kicker">Device</span>
             <dl>
                 <div><dt>Device</dt><dd>{meaningful(event.visitor.deviceType)}</dd></div>
-                <div><dt>Operating system</dt><dd>{meaningful(event.visitor.operatingSystem)}</dd></div>
+                <div><dt>OS</dt><dd>{meaningful(event.visitor.operatingSystem)}</dd></div>
                 <div><dt>Browser</dt><dd>{meaningful(`${event.visitor.browser} ${event.visitor.browserVersion}`.trim())}</dd></div>
-                <div><dt>Device model</dt><dd>{meaningful(event.visitor.deviceModel)}</dd></div>
+                <div><dt>Model</dt><dd>{meaningful(event.visitor.deviceModel)}</dd></div>
             </dl>
             {#if event.visitor.userAgent}<pre>{event.visitor.userAgent}</pre>{/if}
         </section>
         <section>
-            <span class="kicker">Anonymous visitor</span>
+            <span class="kicker">Visitor</span>
             <dl>
                 <div><dt>Visitor ID</dt><dd>{meaningful(event.visitor.id)}</dd></div>
                 <div><dt>Session ID</dt><dd>{meaningful(event.visitor.sessionId)}</dd></div>
@@ -82,7 +82,7 @@
                 <div><dt>Last seen</dt><dd>{meaningful(event.visitor.lastSeen)}</dd></div>
             </dl>
         </section>
-        <p class="privacy">Copied text is truncated and never collected from password, email, or other form fields. Network addresses are stored at a reduced prefix.</p>
+        <p class="privacy">Copied text is truncated. Form fields are skipped.</p>
     </div>
 {/if}
 
@@ -121,7 +121,7 @@
     }
 
     h2, p, blockquote { margin: 0; }
-    h2 { margin-top: 8px; font-size: var(--text-lg); font-weight: 600; letter-spacing: -0.02em; line-height: 1.3; }
+    h2 { margin-top: 8px; font-size: var(--text-lg); font-weight: 500; letter-spacing: -0.02em; line-height: 1.3; }
 
     .inspector > header button {
         display: grid;
@@ -140,7 +140,7 @@
         display: block;
         margin: 14px 0 8px;
         font-size: var(--text-lg);
-        font-weight: 600;
+        font-weight: 500;
         line-height: 1.35;
     }
     .payload blockquote {

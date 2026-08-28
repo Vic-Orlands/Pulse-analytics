@@ -34,7 +34,7 @@
 
     <div class="rows">
         {#if rows.length === 0}
-            <div class="empty-copy">No traffic recorded for this period.</div>
+            <div class="empty-copy">No traffic</div>
         {:else}
             {#each rows.slice(0, 6) as row, index}
                 <div class="row">
@@ -72,7 +72,7 @@
         background: color-mix(in srgb, var(--accent) 8%, var(--paper));
     }
 
-    h2 { margin: 4px 0 0; font-size: 16px; font-weight: 650; }
+    h2 { margin: 4px 0 0; font-size: 16px; font-weight: 500; }
     .rows { padding: 6px 16px 10px; }
     .row {
         display: grid;
@@ -85,7 +85,7 @@
     .row:last-child { border-bottom: 0; }
     .rank { color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
     .label-wrap { min-width: 0; }
-    .label { display: block; overflow: hidden; font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+    .label { display: block; overflow: hidden; font-size: 13px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
     .bar { display: block; width: var(--width); height: 3px; margin-top: 6px; border-radius: 99px; background: var(--accent); }
     strong { font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums; }
 </style>

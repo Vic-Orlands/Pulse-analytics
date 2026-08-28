@@ -17,15 +17,15 @@
         <header class="chooser-head">
             <div>
                 <span class="kicker">Pulse</span>
-                <h1 id="welcome-title">Choose how you want to read traffic.</h1>
+                <h1 id="welcome-title">Theme</h1>
             </div>
-            <p>Two views of the same data. You can change this any time from the sidebar.</p>
+            <p>Two views of the same data.</p>
         </header>
     {:else}
         <header class="compact-head">
             <span class="kicker">Interface</span>
-            <h2 id="appearance-title">Choose a theme</h2>
-            <p>Your selection is saved on this device and applied immediately.</p>
+            <h2 id="appearance-title">Theme</h2>
+            <p>Saved on this device.</p>
         </header>
     {/if}
 
@@ -83,13 +83,13 @@
 
     h1, h2 {
         margin: 0;
-        font-weight: 600;
+        font-weight: 500;
         letter-spacing: -0.02em;
     }
 
     h1 {
         font-size: var(--text-lg);
-        font-weight: 600;
+        font-weight: 500;
         line-height: 1.3;
     }
 
@@ -122,9 +122,9 @@
     }
 
     button:hover { transform: translateY(-2px); }
-    button.chosen { border-color: var(--accent, #d24a3e); box-shadow: inset 0 0 0 1px var(--accent, #d24a3e); }
+    button.chosen { border-color: var(--ink); box-shadow: none; }
 
-    .preview { height: 210px; padding: 18px; color: #1c1b18; background: #f3efe6; }
+    .preview { height: 210px; padding: 18px; color: #111111; background: #ffffff; }
     .preview-nav { display: flex; align-items: center; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid currentColor; opacity: 0.32; }
     .preview-nav i { width: 36px; height: 7px; margin-right: auto; border-radius: 99px; background: currentColor; }
     .preview-nav span { width: 27px; height: 3px; border-radius: 99px; background: currentColor; }
@@ -138,27 +138,27 @@
     .preview-metrics i:last-child { border: 0; }
     svg { width: 100%; margin-top: 9px; overflow: visible; fill: none; }
     .grid-line { stroke: currentColor; stroke-width: 0.6; opacity: 0.12; }
-    .chart-one { stroke: #d24a3e; stroke-width: 2; }
-    .chart-two { stroke: #7f9ea3; stroke-width: 1.2; stroke-dasharray: 3 4; }
+    .chart-one { stroke: #111111; stroke-width: 2; }
+    .chart-two { stroke: #9a9a9a; stroke-width: 1.2; stroke-dasharray: 3 4; }
     [data-preview="signal"] {
-        color: #f4f0e8;
-        background: #121116;
+        color: #f4f4f4;
+        background: #111111;
     }
-    [data-preview="signal"] .chart-one { stroke: #ff6d5c; }
-    [data-preview="signal"] .chart-two { stroke: #7ec4cc; }
+    [data-preview="signal"] .chart-one { stroke: #f4f4f4; }
+    [data-preview="signal"] .chart-two { stroke: #9a9a9a; }
 
     .theme-meta { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 12px; padding: 17px 18px 10px; }
     .theme-meta > span { font-size: 12px; }
-    h3 { margin: -2px 0 4px; font-size: var(--text-lg); font-weight: 600; letter-spacing: -0.02em; }
-    .theme-meta p { margin: 0; color: var(--muted, #6f6c64); font-size: 13px; line-height: 1.45; }
-    .theme-meta strong { color: var(--accent, #d24a3e); font-size: 12px; text-transform: uppercase; }
+    h3 { margin: -2px 0 4px; font-size: var(--text-lg); font-weight: 500; letter-spacing: -0.02em; }
+    .theme-meta p { margin: 0; color: var(--muted, #6b6b6b); font-size: 13px; line-height: 1.45; }
+    .theme-meta strong { color: var(--ink); font-size: 12px; text-transform: uppercase; font-weight: 500; }
     .swatches { display: flex; padding: 0 18px 16px 64px; }
     .swatches i { width: 18px; height: 6px; border-radius: 99px; background: var(--swatch); }
-    .recommended { position: absolute; top: 12px; right: 12px; padding: 5px 8px; border-radius: 999px; color: #fbf8f2; background: #d24a3e; font-size: 11px; text-transform: uppercase; }
+    .recommended { position: absolute; top: 12px; right: 12px; padding: 5px 8px; border-radius: 999px; color: #ffffff; background: #111111; font-size: 11px; text-transform: uppercase; font-weight: 500; }
 
     section.compact { width: 100%; padding: 0; }
     .compact-head { margin-bottom: 20px; }
-    .compact-head h2 { margin-bottom: 7px; font-size: var(--text-lg); font-weight: 600; }
+    .compact-head h2 { margin-bottom: 7px; font-size: var(--text-lg); font-weight: 500; }
     .compact .theme-grid { margin-top: 0; }
     .compact .preview { height: 158px; }
 

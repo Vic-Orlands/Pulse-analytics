@@ -303,14 +303,14 @@ export function demoDashboard(input: {
             {
                 id: "scrape",
                 severity: "warning",
-                title: "Scraping pattern detected",
-                detail: "Three automated extraction sessions hit /docs in this window.",
+                title: "Scraping",
+                detail: "Automated requests on /docs.",
                 count: 3,
             },
         ],
         cohorts: { newVisitors: 1690, returningVisitors: 1124 },
         warnings: [
-            "Showing sample data. Connect Cloudflare Analytics Engine to see live traffic.",
+            "Sample data.",
         ],
     };
 }

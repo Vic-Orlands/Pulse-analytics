@@ -17,7 +17,7 @@ export const handle: Handle = async ({ event, resolve }) => {
     if (event.cookies.get("pulse_auth") !== expected) {
         return new Response(null, {
             status: 303,
-            headers: { location: `/login?next=${encodeURIComponent(event.url.pathname + event.url.search)}` },
+            headers: { location: "/" },
         });
     }
 

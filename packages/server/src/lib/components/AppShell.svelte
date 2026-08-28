@@ -10,6 +10,7 @@
     import type { Snippet } from "svelte";
     import { appearance } from "$lib/appearance.svelte";
     import { resolve } from "$app/paths";
+    import { goto } from "$app/navigation";
 
     let {
         current,
@@ -38,30 +39,37 @@
     ];
 
     const query = $derived(`site=${encodeURIComponent(siteId)}&interval=${encodeURIComponent(interval)}`);
+
+    function changeSite(event: Event) {
+        const select = event.currentTarget as HTMLSelectElement;
+        const path = current === "signals" ? "/signals" : "/dashboard";
+        void goto(
+            resolve(`${path}?site=${encodeURIComponent(select.value)}&interval=${encodeURIComponent(interval)}`),
+            { keepFocus: true, noScroll: true },
+        );
+    }
 </script>
 
 <div class="shell" data-theme={appearance.id}>
     <aside class="sidebar" aria-label="Pulse navigation">
         <a class="brand" href={resolve(`/dashboard?${query}`)} aria-label="Pulse analytics home">
             <span class="pulse-mark" aria-hidden="true"><i></i><i></i><i></i></span>
-            <span>Pulse</span>
         </a>
 
-        <form class="site-form" method="GET" action={current === "signals" ? resolve("/signals") : resolve("/dashboard")}>
-            <input type="hidden" name="interval" value={interval} />
+        <div class="site-form">
             <label>
-                <span class="kicker">Application</span>
-                <select name="site" value={siteId} onchange={(event) => event.currentTarget.form?.requestSubmit()}>
+                <span class="kicker">App</span>
+                <select name="site" value={siteId} onchange={changeSite}>
                     {#if sites.length}
                         {#each sites as site (site)}
                             <option value={site}>{site}</option>
                         {/each}
                     {:else}
-                        <option value="">Install tracking to create an app</option>
+                        <option value="">Install tracking</option>
                     {/if}
                 </select>
             </label>
-        </form>
+        </div>
 
         <nav class="nav">
             <a class:active={current === "dashboard"} href={resolve(`/dashboard?${query}`)}>
@@ -81,17 +89,14 @@
             </button>
             <button type="button" onclick={() => appearance.toggle()}>
                 <HugeiconsIcon icon={appearance.id === "signal" ? Sun01Icon : Moon01Icon} size={16} strokeWidth={1.7} />
-                {appearance.id === "signal" ? "Paper theme" : "Night theme"}
+                {appearance.id === "signal" ? "Light" : "Dark"}
             </button>
         </div>
     </aside>
 
     <div class="workspace">
         <header class="topbar">
-            <div>
-                <p class="kicker">{siteId || "Pulse"}</p>
-                <h1>{title}</h1>
-            </div>
+            <h1>{title}</h1>
             <div class="segmented" aria-label="Time period">
                 {#each periods as period (period.id)}
                     <a
@@ -137,7 +142,7 @@
         padding: 4px 8px;
         color: inherit;
         font-size: var(--text-lg);
-        font-weight: 600;
+        font-weight: 500;
         letter-spacing: -0.02em;
         text-decoration: none;
     }
@@ -201,7 +206,7 @@
     .nav a.active {
         color: var(--ink);
         background: color-mix(in srgb, var(--ink) 8%, transparent);
-        font-weight: 600;
+        font-weight: 500;
     }
 
     .workspace {
@@ -218,15 +223,13 @@
         justify-content: space-between;
         gap: 16px;
         padding: 12px 24px;
-        border-bottom: 1px solid var(--line);
-        background: color-mix(in srgb, var(--paper) 88%, transparent);
-        backdrop-filter: blur(16px);
+        background: var(--paper);
     }
 
     .topbar h1 {
         margin: 2px 0 0;
         font-size: var(--text-lg);
-        font-weight: 600;
+        font-weight: 500;
         letter-spacing: -0.02em;
         line-height: 1.3;
     }
@@ -256,8 +259,7 @@
             padding: 10px;
             border: 1px solid var(--line);
             border-radius: 18px;
-            background: color-mix(in srgb, var(--panel) 94%, transparent);
-            box-shadow: var(--shadow);
+            background: var(--panel);
         }
 
         .brand,

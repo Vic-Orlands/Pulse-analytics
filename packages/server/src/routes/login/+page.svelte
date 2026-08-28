@@ -12,25 +12,23 @@
 
 <svelte:head>
     <title>Sign in — Pulse</title>
-    <meta name="description" content="Enter your Pulse analytics dashboard." />
+    <meta name="description" content="Owner sign in for Pulse." />
 </svelte:head>
 
 <main>
-    <section class="panel">
+    <section>
         <span class="pulse-mark" aria-hidden="true"><i></i><i></i><i></i></span>
-        <p class="kicker">Private dashboard</p>
         <h1>Welcome back</h1>
-        <p>Enter the owner password to open the dashboard. There is no public signup.</p>
+        <p>Owner password. No signup.</p>
         <form method="POST" use:enhance>
             <input class="username" name="username" value="counterscale" autocomplete="username" tabindex="-1" aria-hidden="true" />
             <label for="password">Password</label>
             <input bind:this={passwordInput} id="password" name="password" type="password" autocomplete="current-password" required aria-invalid={form?.invalid ? "true" : undefined} aria-describedby={form?.invalid ? "password-error" : undefined} />
-            {#if form?.invalid}<small id="password-error" role="alert">That password did not match. Please try again.</small>{/if}
-            <button>Continue <span aria-hidden="true">→</span></button>
+            {#if form?.invalid}<small id="password-error" role="alert">Wrong password.</small>{/if}
+            <button>Continue</button>
         </form>
         <footer>
-            <a href={resolve("/")}>Back to Pulse</a>
-            · Encrypted session · Owner access only
+            <a href={resolve("/")}>Back</a>
         </footer>
     </section>
 </main>
@@ -41,57 +39,54 @@
         min-height: 100vh;
         place-items: center;
         padding: 24px;
-        background:
-            radial-gradient(circle at top left, color-mix(in srgb, var(--accent) 16%, transparent), transparent 36%),
-            var(--paper);
+        background: var(--paper);
     }
 
     section {
-        width: min(420px, 100%);
-        padding: 32px;
+        width: min(360px, 100%);
     }
 
-    .pulse-mark { margin-bottom: 22px; }
+    .pulse-mark { margin-bottom: 18px; }
 
     h1 {
-        margin: 10px 0 12px;
-        font-size: var(--text-lg);
-        font-weight: 600;
-        letter-spacing: -0.02em;
-        line-height: 1.3;
+        margin: 8px 0 8px;
+        font-size: 1rem;
+        font-weight: 500;
     }
 
     section > p {
-        max-width: 320px;
-        margin: 0 0 28px;
+        margin: 0 0 22px;
         color: var(--muted);
+        font-size: 13px;
+        font-weight: 400;
     }
 
     label {
         display: block;
-        margin-bottom: 8px;
+        margin-bottom: 6px;
         color: var(--muted);
         font-size: 12px;
-        font-weight: 650;
+        font-weight: 400;
     }
 
     input {
         width: 100%;
-        height: 46px;
-        padding: 0 12px;
+        height: 40px;
+        padding: 0 10px;
         border: 1px solid var(--line);
-        border-radius: 12px;
+        border-radius: 8px;
         color: var(--ink);
         background: var(--paper);
+        font-size: 13px;
+        font-weight: 400;
     }
 
     input:focus {
         outline: 0;
-        border-color: var(--accent);
-        box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent);
+        border-color: var(--ink);
     }
 
-    input[aria-invalid="true"] { border-color: var(--accent); }
+    input[aria-invalid="true"] { border-color: var(--ink); }
 
     .username {
         position: absolute;
@@ -106,43 +101,35 @@
     small {
         display: block;
         margin-top: 8px;
-        color: var(--accent);
+        color: var(--muted);
         font-size: 12px;
+        font-weight: 400;
     }
 
     button {
         display: flex;
         width: 100%;
-        height: 46px;
+        height: 40px;
         align-items: center;
-        justify-content: space-between;
-        margin-top: 14px;
-        padding: 0 14px;
+        justify-content: center;
+        margin-top: 12px;
         border: 0;
-        border-radius: 12px;
+        border-radius: 8px;
         color: var(--paper);
         background: var(--ink);
-        font-weight: 650;
+        font-size: 13px;
+        font-weight: 400;
         cursor: pointer;
     }
 
-    button:hover { background: var(--accent); }
-
     footer {
-        margin-top: 20px;
-        color: var(--muted);
+        margin-top: 16px;
         font-size: 12px;
     }
 
     footer a {
-        color: var(--ink);
-        font-weight: 600;
-        text-decoration: none;
-    }
-
-    footer a {
-        color: var(--ink);
-        font-weight: 600;
+        color: var(--muted);
+        font-weight: 400;
         text-decoration: none;
     }
 </style>

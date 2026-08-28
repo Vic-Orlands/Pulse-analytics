@@ -181,8 +181,8 @@ export function presentFunnel(input: {
 
     return [
         { label: "Landed", count: sessions, rate: rate(sessions) },
-        { label: "Viewed another page", count: engaged, rate: rate(engaged) },
-        { label: "Copied, clicked out, or downloaded", count: converted, rate: rate(converted) },
+        { label: "Next page", count: engaged, rate: rate(engaged) },
+        { label: "Action", count: converted, rate: rate(converted) },
     ];
 }
 
@@ -224,8 +224,8 @@ export function presentAlerts(input: {
         alerts.push({
             id: "scrape",
             severity: "warning",
-            title: "Scraping detected",
-            detail: "Automated extraction patterns were recorded on this property.",
+            title: "Scraping",
+            detail: "Automated requests on this site.",
             count: input.scrapeCount,
         });
     }
@@ -234,8 +234,8 @@ export function presentAlerts(input: {
         alerts.push({
             id: "copy-sensitive",
             severity: "warning",
-            title: "Pricing or docs copied",
-            detail: "Copied text originated on pricing, docs, install, or API pages.",
+            title: "Copied text",
+            detail: "Copied from pricing or docs.",
             count: sensitiveCount,
         });
     }
@@ -244,8 +244,8 @@ export function presentAlerts(input: {
         alerts.push({
             id: "live-spike",
             severity: "info",
-            title: "Live traffic spike",
-            detail: "A larger than usual number of people are on the site right now.",
+            title: "Live spike",
+            detail: "More people on the site now.",
             count: input.liveVisitors,
         });
     }
@@ -254,8 +254,8 @@ export function presentAlerts(input: {
         alerts.push({
             id: "bounce",
             severity: "info",
-            title: "High bounce rate",
-            detail: "Most sessions in this window left after a single page.",
+            title: "High bounce",
+            detail: "Most visits left after one page.",
             count: Math.round(input.bounceRate),
         });
     }

@@ -225,7 +225,7 @@
     </header>
 
     {#if visible.length === 0}
-        <p class="empty-copy">{active?.empty ?? "No data for this period."}</p>
+        <p class="empty-copy">{active?.empty ?? "No data"}</p>
     {:else}
         <ol>
             {#each visible as row (row[0])}
@@ -359,7 +359,7 @@
     h3 {
         margin: 0;
         font-size: 13px;
-        font-weight: 600;
+        font-weight: 500;
         letter-spacing: -0.02em;
     }
 
@@ -378,7 +378,7 @@
         color: var(--muted);
         background: transparent;
         font-size: 13px;
-        font-weight: 600;
+        font-weight: 500;
         cursor: pointer;
     }
 
@@ -447,7 +447,7 @@
         border-radius: 99px;
         background: color-mix(in srgb, var(--ink) 8%, transparent);
         font-size: 11px;
-        font-weight: 700;
+        font-weight: 500;
         line-height: 1;
     }
 
@@ -491,7 +491,7 @@
         color: var(--ink);
         background: transparent;
         font-size: 12px;
-        font-weight: 600;
+        font-weight: 500;
         cursor: pointer;
     }
 

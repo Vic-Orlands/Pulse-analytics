@@ -14,6 +14,6 @@
 
 <style>
     .metric { min-width: 0; padding: 18px; }
-    strong { display: block; margin: 14px 0 8px; font-size: var(--text-lg); font-weight: 600; line-height: 1.3; letter-spacing: -0.02em; }
+    strong { display: block; margin: 14px 0 8px; font-size: var(--text-lg); font-weight: 500; line-height: 1.3; letter-spacing: -0.02em; }
     small { color: var(--muted); font-size: 12px; }
 </style>

@@ -12,11 +12,8 @@
 </script>
 
 <svelte:head>
-    <title>Pulse — Private web analytics</title>
-    <meta
-        name="description"
-        content="Pulse is a personal, cookieless analytics dashboard for the sites you run on Cloudflare. No public signup."
-    />
+    <title>Pulse</title>
+    <meta name="description" content="Private cookieless analytics." />
 </svelte:head>
 
 <div class="home">
@@ -43,27 +40,20 @@
     </header>
 
     <section class="intro">
-        <p class="kicker">Personal analytics</p>
-        <h1>Privacy-friendly analytics for the sites you run</h1>
+        <p class="kicker">Analytics</p>
+        <h1>Private analytics</h1>
         <p class="lede">
-            Pulse is a private, multi-site dashboard on Cloudflare Workers and Analytics Engine.
-            It measures visitors, views, sessions, and traffic sources without cookies or personal data.
-            This is a personal app: there is no public signup.
+            Cookieless traffic on Cloudflare. No signup.
         </p>
         <div class="actions">
             <a class="login" href={resolve(data.signedIn ? "/dashboard" : "/login")}>{ownerLabel}</a>
-            <a class="ghost" href={githubUrl} target="_blank" rel="noreferrer">View on GitHub</a>
+            <a class="ghost" href={githubUrl} target="_blank" rel="noreferrer">GitHub</a>
         </div>
-        <p class="note">Owner login only. Visitors can read about Pulse and watch the product walkthrough.</p>
     </section>
 
     <section class="showcase" aria-labelledby="showcase-title">
-        <p class="kicker">Product insight</p>
-        <h2 id="showcase-title">Inside the Pulse dashboard</h2>
-        <p class="lede">
-            Compact Inter type, a quiet sidebar, and the analytics grid — the same surface used to
-            read live traffic.
-        </p>
+        <p class="kicker">Dashboard</p>
+        <h2 id="showcase-title">How it looks</h2>
         <figure class="panel stage">
             <video
                 src="/pulse-preview.mp4"
@@ -74,29 +64,26 @@
                 playsinline
                 preload="metadata"
             >
-                Your browser cannot play this video.
+                Video not supported.
             </video>
-            <figcaption>Pulse dashboard walkthrough: sidebar, type scale, and analytics views.</figcaption>
         </figure>
     </section>
 
     <section class="about" aria-labelledby="about-title">
         <p class="kicker">About</p>
-        <h2 id="about-title">What Pulse tracks, and what it does not</h2>
+        <h2 id="about-title">What it does</h2>
         <ul>
             <li>
-                <strong>Cookieless by design.</strong>
-                Page views, visitors, sessions, bounce rate, pages, referrers, campaigns, countries,
-                and devices — without names, emails, or raw IP addresses.
+                <strong>No cookies.</strong>
+                Pages, referrers, countries, devices.
             </li>
             <li>
-                <strong>You run the worker.</strong>
-                A Cloudflare Worker serves both the tracker and the dashboard. The first pageview
-                creates an app automatically.
+                <strong>Your worker.</strong>
+                Tracker and dashboard on Cloudflare.
             </li>
             <li>
-                <strong>Owner access only.</strong>
-                GitHub is public. The dashboard is not. There is no account creation flow.
+                <strong>Owner only.</strong>
+                GitHub is public. The dashboard is not.
             </li>
         </ul>
     </section>
@@ -134,7 +121,7 @@
 
     .brand {
         color: var(--ink);
-        font-weight: 650;
+        font-weight: 500;
         text-decoration: none;
     }
 
@@ -154,7 +141,7 @@
         padding: 0 12px;
         border-radius: 10px;
         font-size: 13px;
-        font-weight: 600;
+        font-weight: 500;
         text-decoration: none;
     }
 
@@ -194,9 +181,7 @@
     }
 
     .lede,
-    .note,
-    .about li,
-    figcaption {
+    .about li {
         max-width: 38rem;
         color: var(--muted);
         font-size: 14px;
@@ -205,11 +190,6 @@
 
     .lede {
         margin: 0 0 20px;
-    }
-
-    .note {
-        margin: 14px 0 0;
-        font-size: 12px;
     }
 
     .actions {
@@ -226,11 +206,6 @@
         width: 100%;
         border-radius: 12px;
         background: #121116;
-    }
-
-    figcaption {
-        margin: 10px 6px 6px;
-        font-size: 12px;
     }
 
     .about ul {
@@ -253,7 +228,7 @@
         margin-bottom: 4px;
         color: var(--ink);
         font-size: 13px;
-        font-weight: 650;
+        font-weight: 500;
     }
 
     footer {

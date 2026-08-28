@@ -188,11 +188,11 @@ export class AnalyticsEngineAPI {
         Authorization: string;
     };
     defaultUrl: string;
-    private nextQueryAt = 0;
-    private queryGate: Promise<void> = Promise.resolve();
+    private inFlight = 0;
+    private waiters: Array<() => void> = [];
 
-    private static readonly queryIntervalMs =
-        process.env.NODE_ENV === "test" ? 0 : 350;
+    private static readonly maxConcurrentQueries =
+        process.env.NODE_ENV === "test" ? 50 : 12;
     private static readonly maxRateLimitRetries = 2;
 
     constructor(cfAccountId: string, cfApiToken: string) {
@@ -207,25 +207,24 @@ export class AnalyticsEngineAPI {
         };
     }
 
-    private async paceQuery() {
-        if (AnalyticsEngineAPI.queryIntervalMs === 0) return;
-
-        let release = () => {};
-        const previous = this.queryGate;
-        this.queryGate = new Promise<void>((resolve) => {
-            release = resolve;
-        });
-
-        try {
-            await previous;
-            const wait = Math.max(0, this.nextQueryAt - Date.now());
-            if (wait > 0) {
-                await new Promise((resolve) => setTimeout(resolve, wait));
-            }
-            this.nextQueryAt = Date.now() + AnalyticsEngineAPI.queryIntervalMs;
-        } finally {
-            release();
+    private tryAcquireSlot(): Promise<void> | null {
+        if (this.inFlight < AnalyticsEngineAPI.maxConcurrentQueries) {
+            this.inFlight += 1;
+            return null;
         }
+
+        return new Promise<void>((resolve) => {
+            this.waiters.push(resolve);
+        });
+    }
+
+    private releaseSlot() {
+        const next = this.waiters.shift();
+        if (next) {
+            next();
+            return;
+        }
+        this.inFlight = Math.max(0, this.inFlight - 1);
     }
 
     private retryDelay(response: Response, attempt: number) {
@@ -247,23 +246,28 @@ export class AnalyticsEngineAPI {
             attempt <= AnalyticsEngineAPI.maxRateLimitRetries;
             attempt += 1
         ) {
-            if (AnalyticsEngineAPI.queryIntervalMs > 0) await this.paceQuery();
-            const response = await fetch(this.defaultUrl, {
-                method: "POST",
-                body: query,
-                headers: this.defaultHeaders,
-            });
+            const wait = this.tryAcquireSlot();
+            if (wait) await wait;
+            try {
+                const response = await fetch(this.defaultUrl, {
+                    method: "POST",
+                    body: query,
+                    headers: this.defaultHeaders,
+                });
 
-            if (
-                response.status !== 429 ||
-                attempt === AnalyticsEngineAPI.maxRateLimitRetries
-            ) {
-                return response;
+                if (
+                    response.status !== 429 ||
+                    attempt === AnalyticsEngineAPI.maxRateLimitRetries
+                ) {
+                    return response;
+                }
+
+                await new Promise((resolve) =>
+                    setTimeout(resolve, this.retryDelay(response, attempt)),
+                );
+            } finally {
+                this.releaseSlot();
             }
-
-            await new Promise((resolve) =>
-                setTimeout(resolve, this.retryDelay(response, attempt)),
-            );
         }
 
         throw new Error("Analytics Engine request failed after retrying");

@@ -82,17 +82,7 @@
     <div class="relative">
         <svg class="block h-auto w-full overflow-visible" viewBox={`0 0 ${width} ${height}`} role="img" aria-labelledby="traffic-title traffic-description">
             <title id="traffic-title">Visitors over time</title>
-            <desc id="traffic-description">{totalVisitors.toLocaleString()} visitors, {growth.toFixed(1)} percent above the comparison period.</desc>
-            <defs>
-                <linearGradient id="current-fill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stop-color="var(--accent)" stop-opacity="0.62" />
-                    <stop offset="95%" stop-color="var(--accent)" stop-opacity="0.035" />
-                </linearGradient>
-                <linearGradient id="previous-fill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stop-color="var(--comparison)" stop-opacity="0.36" />
-                    <stop offset="95%" stop-color="var(--comparison)" stop-opacity="0.015" />
-                </linearGradient>
-            </defs>
+            <desc id="traffic-description">{totalVisitors.toLocaleString()} visitors this period.</desc>
 
             <g>
                 {#each [0, 0.25, 0.5, 0.75, 1] as ratio}
@@ -112,8 +102,8 @@
                 </g>
             {:else}
                 <g>
-                    <path class="fill-[url(#previous-fill)] stroke-[var(--comparison)] stroke-[1.25] [stroke-dasharray:4_4] [stroke-linecap:round] [stroke-linejoin:round]" d={areaPath("previous")} />
-                    <path class="fill-[url(#current-fill)] stroke-[var(--accent)] stroke-2 [stroke-linecap:round] [stroke-linejoin:round]" d={areaPath("visitors")} />
+                    <path class="fill-[var(--comparison)] opacity-20 stroke-[var(--comparison)] stroke-[1.25] [stroke-dasharray:4_4] [stroke-linecap:round] [stroke-linejoin:round]" d={areaPath("previous")} />
+                    <path class="fill-[var(--accent)] opacity-20 stroke-[var(--accent)] stroke-2 [stroke-linecap:round] [stroke-linejoin:round]" d={areaPath("visitors")} />
                 </g>
             {/if}
 
@@ -145,7 +135,7 @@
         {#if activeIndex !== null && points[activeIndex]}
             {@const point = points[activeIndex]}
             <div class="pointer-events-none absolute top-4 z-[2] grid min-w-40 -translate-x-1/2 gap-2 rounded-xl bg-[var(--ink)] p-3 text-xs text-[var(--paper)] shadow-[var(--shadow)]" style={`left:clamp(80px, ${(xAt(activeIndex) / width) * 100}%, calc(100% - 80px))`}>
-                <strong class="text-sm font-semibold">{formatDate(point.date)}</strong>
+                <strong class="text-sm font-medium">{formatDate(point.date)}</strong>
                 <span class="flex justify-between gap-4 text-[color-mix(in_srgb,var(--paper)_70%,transparent)]">Visitors <b class="font-medium text-[var(--paper)]">{point.visitors.toLocaleString()}</b></span>
                 <span class="flex justify-between gap-4 text-[color-mix(in_srgb,var(--paper)_70%,transparent)]">Previous <b class="font-medium text-[var(--paper)]">{point.previous.toLocaleString()}</b></span>
                 <span class="flex justify-between gap-4 text-[color-mix(in_srgb,var(--paper)_70%,transparent)]">Page views <b class="font-medium text-[var(--paper)]">{point.views.toLocaleString()}</b></span>
@@ -156,6 +146,6 @@
     <figcaption class="mt-3 flex flex-wrap items-center gap-5 border-t border-[var(--line)] pt-3 text-xs uppercase">
         <span class="flex items-center gap-2"><i class="h-2 w-4 bg-[var(--accent)]"></i>Current window</span>
         <span class="flex items-center gap-2"><i class="h-2 w-4 bg-[var(--comparison)]"></i>Previous window</span>
-        <strong class="ml-auto font-medium text-[var(--ink)] max-sm:ml-0 max-sm:w-full">{growth >= 0 ? "+" : ""}{growth.toFixed(1)}% audience shift</strong>
+        <strong class="ml-auto font-medium text-[var(--ink)] max-sm:ml-0 max-sm:w-full">{growth >= 0 ? "+" : ""}{growth.toFixed(1)}%</strong>
     </figcaption>
 </figure>

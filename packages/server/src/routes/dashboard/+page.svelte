@@ -43,7 +43,6 @@
     const growthLabel = $derived(
         data.stats.previousVisitors > 0 ? `${growth >= 0 ? "+" : ""}${growth.toFixed(1)}%` : "—",
     );
-    const signalCount = $derived(data.events.reduce((sum, event) => sum + event.count, 0));
     const copyRows = $derived<CountRow[]>(data.copies.map((row) => [row.snippet, row.count]));
     const journeyRows = $derived<CountRow[]>(data.journeys.map((row) => [row.path, row.count]));
     const chips = $derived(
@@ -87,7 +86,7 @@
 
 <svelte:head>
     <title>Pulse — Analytics</title>
-    <meta name="description" content="Private web analytics for every product you ship." />
+    <meta name="description" content="Private web analytics." />
 </svelte:head>
 
 <AppShell
@@ -102,13 +101,13 @@
         {#if data.warnings.length || !data.sites.length || data.alerts.length}
             <section class="notices" data-reveal>
                 {#if data.source === "demo"}
-                    <p class="banner">Sample data is loaded for local preview. Live traffic appears after Cloudflare Analytics Engine is connected.</p>
+                    <p class="banner">Sample data.</p>
                 {/if}
-                {#each data.warnings.filter((warning) => data.source !== "demo" || !warning.startsWith("Showing sample")) as warning (warning)}
+                {#each data.warnings.filter((warning) => data.source !== "demo") as warning (warning)}
                     <p class="banner warn">{warning}</p>
                 {/each}
                 {#if !data.sites.length}
-                    <p class="banner">No applications yet. Open Install tracking, paste the snippet into any app, and Pulse will create it from the first pageview.</p>
+                    <p class="banner">No apps yet.</p>
                 {/if}
                 {#each data.alerts as alert (alert.id)}
                     <article class="alert" data-severity={alert.severity}>
@@ -153,7 +152,6 @@
                     <h2>Visitors over time</h2>
                 </div>
                 <div class="chart-tools">
-                    <p>Current window measured against the preceding period.</p>
                     <div class="segmented" aria-label="Chart style">
                         <button class:active={chartMode === "bar"} aria-pressed={chartMode === "bar"} onclick={() => (chartMode = "bar")}>Bar</button>
                         <button class:active={chartMode === "area"} aria-pressed={chartMode === "area"} onclick={() => (chartMode = "area")}>Area</button>
@@ -172,7 +170,7 @@
                         <HugeiconsIcon icon={Cancel01Icon} size={12} strokeWidth={2} />
                     </button>
                 {/each}
-                <p>Highlights the selected row. Other panels still show the full period until live filtering is connected.</p>
+                <p>Filtered.</p>
             </div>
         {/if}
 
@@ -180,17 +178,17 @@
             <div class="breakdown-top">
                 <DimensionPanel
                     groups={[
-                        { id: "pages", label: "Pages", rows: data.pages, empty: "No pages in this period." },
-                        { id: "routes", label: "Routes", rows: data.routes, empty: "No route patterns in this period." },
-                        { id: "hostnames", label: "Hostnames", rows: data.hostnames, empty: "No hostnames in this period." },
+                        { id: "pages", label: "Pages", rows: data.pages, empty: "No pages" },
+                        { id: "routes", label: "Routes", rows: data.routes, empty: "No routes" },
+                        { id: "hostnames", label: "Hostnames", rows: data.hostnames, empty: "No hostnames" },
                     ]}
                     selected={filters.pages ?? ""}
                     onselect={(label) => toggleFilter("pages", label)}
                 />
                 <DimensionPanel
                     groups={[
-                        { id: "referrers", label: "Referrers", rows: data.referrers, empty: "No referring sources in this period." },
-                        { id: "source", label: "UTM", rows: data.utmSources, empty: "No UTM parameters in this period." },
+                        { id: "referrers", label: "Referrers", rows: data.referrers, empty: "No referrers" },
+                        { id: "source", label: "UTM", rows: data.utmSources, empty: "No UTM" },
                     ]}
                     marker="referrer"
                     selected={filters.referrers ?? ""}
@@ -200,8 +198,8 @@
             <div class="breakdown-bottom">
                 <DimensionPanel
                     groups={[
-                        { id: "countries", label: "Countries", rows: data.countries, empty: "Geography appears as traffic arrives." },
-                        { id: "regions", label: "Regions", rows: data.regions, empty: "Regions appear as traffic spreads." },
+                        { id: "countries", label: "Countries", rows: data.countries, empty: "No countries" },
+                        { id: "regions", label: "Regions", rows: data.regions, empty: "No regions" },
                     ]}
                     marker="country"
                     format="percent"
@@ -210,8 +208,8 @@
                 />
                 <DimensionPanel
                     groups={[
-                        { id: "devices", label: "Devices", rows: data.devices, empty: "No device data in this period.", marker: "device" },
-                        { id: "browsers", label: "Browsers", rows: data.browsers, empty: "No browser data in this period.", marker: "browser" },
+                        { id: "devices", label: "Devices", rows: data.devices, empty: "No devices", marker: "device" },
+                        { id: "browsers", label: "Browsers", rows: data.browsers, empty: "No browsers", marker: "browser" },
                     ]}
                     format="percent"
                     selected={filters.devices ?? filters.browsers ?? ""}
@@ -219,7 +217,7 @@
                 />
                 <DimensionPanel
                     groups={[
-                        { id: "os", label: "Operating systems", rows: data.operatingSystems, empty: "No operating system data in this period." },
+                        { id: "os", label: "OS", rows: data.operatingSystems, empty: "No OS data" },
                     ]}
                     marker="os"
                     format="percent"
@@ -232,25 +230,25 @@
         <section class="breakdowns" aria-label="Session paths" data-reveal>
             <div class="breakdown-top">
                 <DimensionPanel
-                    groups={[{ id: "entries", label: "Entry pages", rows: data.entries, empty: "No landing pages in this period." }]}
+                    groups={[{ id: "entries", label: "Entry pages", rows: data.entries, empty: "No landing pages" }]}
                 />
                 <DimensionPanel
-                    groups={[{ id: "exits", label: "Exit pages", rows: data.exits, empty: "No exit pages in this period." }]}
+                    groups={[{ id: "exits", label: "Exit pages", rows: data.exits, empty: "No exit pages" }]}
                 />
             </div>
             <div class="breakdown-bottom">
                 <DimensionPanel
                     groups={[
-                        { id: "source", label: "UTM source", rows: data.utmSources, empty: "No UTM source in this period." },
-                        { id: "medium", label: "Medium", rows: data.utmMediums, empty: "No UTM medium in this period." },
-                        { id: "campaign", label: "Campaign", rows: data.utmCampaigns, empty: "No UTM campaign in this period." },
+                        { id: "source", label: "UTM source", rows: data.utmSources, empty: "No UTM source" },
+                        { id: "medium", label: "Medium", rows: data.utmMediums, empty: "No medium" },
+                        { id: "campaign", label: "Campaign", rows: data.utmCampaigns, empty: "No campaign" },
                     ]}
                 />
                 <DimensionPanel
-                    groups={[{ id: "bounce", label: "Bounce by landing", rows: data.bounceByLanding, empty: "No bounce-by-landing data in this period." }]}
+                    groups={[{ id: "bounce", label: "Bounce by landing", rows: data.bounceByLanding, empty: "No bounce data" }]}
                 />
                 <DimensionPanel
-                    groups={[{ id: "journeys", label: "Journeys", rows: journeyRows, empty: "Journeys appear after sessions include a page path." }]}
+                    groups={[{ id: "journeys", label: "Journeys", rows: journeyRows, empty: "No journeys" }]}
                     preview={6}
                 />
             </div>
@@ -258,19 +256,19 @@
 
         <section class="breakdown-bottom" aria-label="Actions" data-reveal>
             <DimensionPanel
-                groups={[{ id: "copies", label: "Copied text", rows: copyRows, empty: "Copied snippets appear after visitors copy text." }]}
+                groups={[{ id: "copies", label: "Copied text", rows: copyRows, empty: "No copied text" }]}
             />
             <DimensionPanel
-                groups={[{ id: "outbound", label: "Outbound clicks", rows: data.outbound, empty: "No outbound clicks in this period." }]}
+                groups={[{ id: "outbound", label: "Outbound clicks", rows: data.outbound, empty: "No outbound clicks" }]}
                 marker="referrer"
             />
             <DimensionPanel
-                groups={[{ id: "downloads", label: "Downloads", rows: data.downloads, empty: "No file downloads in this period." }]}
+                groups={[{ id: "downloads", label: "Downloads", rows: data.downloads, empty: "No downloads" }]}
             />
         </section>
 
         <section class="panel funnel" data-reveal>
-            <header class="section-head"><div><span class="kicker">Funnel</span><h2>Landed to action</h2></div></header>
+            <header class="section-head"><div><span class="kicker">Funnel</span><h2>Funnel</h2></div></header>
             <div class="funnel-steps">
                 {#each data.funnel as step, index (step.label)}
                     <article>
@@ -283,15 +281,6 @@
                 {/each}
             </div>
         </section>
-
-        <a class="panel ledger-callout" href={`/signals?site=${encodeURIComponent(data.siteId)}&interval=${encodeURIComponent(data.interval)}`} data-reveal>
-            <div>
-                <span class="kicker">Event intelligence</span>
-                <h2>Open the signal ledger</h2>
-                <p>Review screenshot captures, copy actions, scraping detections, and the interactions around them.</p>
-            </div>
-            <strong>{signalCount} signals <span aria-hidden="true">↗</span></strong>
-        </a>
     </div>
 </AppShell>
 <InstallationSheet open={installationOpen} onclose={closeInstallation} />
@@ -309,15 +298,14 @@
     .totals article + article { border-left: 1px solid var(--line); }
     .totals .kicker { color: var(--muted); }
     .totals .kicker :global(svg) { color: var(--accent); }
-    .totals strong { display: block; margin: 8px 0 6px; font-size: var(--text-lg); font-weight: 600; line-height: 1.3; letter-spacing: -0.02em; }
+    .totals strong { display: block; margin: 8px 0 6px; font-size: var(--text-lg); font-weight: 500; line-height: 1.3; letter-spacing: -0.02em; }
     .totals small { color: var(--muted); font-size: 12px; }
     .totals .up { color: var(--ok); }
     .totals .down { color: var(--accent); }
     .chart-panel, .funnel { padding: 22px 22px 16px; }
     .section-head { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
-    .section-head h2, .ledger-callout h2, .funnel-steps h3 { margin: 4px 0 0; font-size: var(--text-lg); font-weight: 600; letter-spacing: -0.02em; }
+    .section-head h2, .funnel-steps h3 { margin: 4px 0 0; font-size: var(--text-lg); font-weight: 500; letter-spacing: -0.02em; }
     .chart-tools { display: flex; max-width: 420px; align-items: center; gap: 14px; }
-    .chart-tools p { margin: 0; color: var(--muted); font-size: 13px; }
     .chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
     .chips button {
         display: inline-flex;
@@ -344,11 +332,6 @@
     .funnel-steps small { color: var(--muted); font-size: 12px; }
     .funnel-steps strong { font-variant-numeric: tabular-nums; }
     .funnel-steps i { position: absolute; bottom: 0; left: 0; width: var(--share); height: 3px; background: var(--accent); }
-    .ledger-callout { display: flex; align-items: end; justify-content: space-between; gap: 24px; padding: 24px; color: inherit; text-decoration: none; }
-    .ledger-callout p { max-width: 520px; margin: 8px 0 0; color: var(--muted); }
-    .ledger-callout strong { font-size: 12px; font-weight: 600; text-transform: uppercase; }
-    .ledger-callout strong span { color: var(--accent); }
-    .ledger-callout:hover { background: color-mix(in srgb, var(--accent) 6%, var(--panel)); }
     [data-reveal] { opacity: 0; }
     @media (max-width: 1100px) {
         .breakdown-bottom { grid-template-columns: 1fr 1fr; }

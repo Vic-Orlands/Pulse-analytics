@@ -1,18 +1,18 @@
 export const themes = [
     {
         id: "observatory",
-        name: "Paper",
+        name: "Light",
         number: "01",
-        description: "Warm daylight interface with coral signals and quiet type.",
-        palette: ["#f3efe6", "#1c1b18", "#d24a3e", "#6f6c64"],
+        description: "White, black, and grey.",
+        palette: ["#ffffff", "#111111", "#6b6b6b", "#e6e6e6"],
         recommended: true,
     },
     {
         id: "signal",
-        name: "Night",
+        name: "Dark",
         number: "02",
-        description: "Dim operational view for late sessions and live monitoring.",
-        palette: ["#121116", "#f4f0e8", "#ff6d5c", "#7ec4cc"],
+        description: "Black, white, and grey.",
+        palette: ["#111111", "#f4f4f4", "#9a9a9a", "#2a2a2a"],
         recommended: false,
     },
 ] as const;
