@@ -26,8 +26,8 @@ html[data-theme="observatory"] {
     --ok: #111111;
     --warn: #6b6b6b;
     --shadow: none;
-    --radius: 16px;
-    --sidebar: 232px;
+    --radius: 8px;
+    --sidebar: 256px;
     --text: 0.875rem;
     --text-lg: 1.125rem;
 }
@@ -121,24 +121,6 @@ b,
     font-family: inherit;
     font-variant-numeric: tabular-nums;
 }
-
-.pulse-mark {
-    display: flex;
-    align-items: flex-end;
-    gap: 3px;
-    width: 16px;
-    height: 15px;
-}
-
-.pulse-mark i {
-    width: 3.5px;
-    border-radius: 99px;
-    background: var(--accent);
-}
-
-.pulse-mark i:nth-child(1) { height: 7px; }
-.pulse-mark i:nth-child(2) { height: 15px; }
-.pulse-mark i:nth-child(3) { height: 11px; }
 
 .kicker {
     display: inline-flex;

@@ -113,7 +113,7 @@
         overflow: hidden;
         padding: 0;
         border: 1px solid var(--line, #ddd6c8);
-        border-radius: 18px;
+        border-radius: 8px;
         color: inherit;
         background: var(--panel, #fbf8f2);
         font: inherit;
@@ -133,7 +133,7 @@
     .preview-copy span { width: 28%; opacity: 0.35; }
     .preview-copy strong { height: 10px; }
     .preview-copy strong:last-child { width: 74%; }
-    .preview-metrics { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 16px; border: 1px solid color-mix(in srgb, currentColor 18%, transparent); border-radius: 12px; overflow: hidden; }
+    .preview-metrics { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 16px; border: 1px solid color-mix(in srgb, currentColor 18%, transparent); border-radius: 8px; overflow: hidden; }
     .preview-metrics i { height: 27px; border-right: 1px solid color-mix(in srgb, currentColor 18%, transparent); }
     .preview-metrics i:last-child { border: 0; }
     svg { width: 100%; margin-top: 9px; overflow: visible; fill: none; }

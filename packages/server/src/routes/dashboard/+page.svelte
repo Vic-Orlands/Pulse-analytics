@@ -1,14 +1,11 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { animate, stagger } from "motion";
-    import { HugeiconsIcon } from "@hugeicons/svelte";
-    import {
-        Activity01Icon,
-        ArrowDown02Icon,
-        Cancel01Icon,
-        UserGroupIcon,
-        ViewIcon,
-    } from "@hugeicons/core-free-icons";
+    import ArrowDown from "phosphor-svelte/lib/ArrowDown";
+    import ChartLine from "phosphor-svelte/lib/ChartLine";
+    import Eye from "phosphor-svelte/lib/Eye";
+    import Users from "phosphor-svelte/lib/Users";
+    import X from "phosphor-svelte/lib/X";
     import type { PageProps } from "./$types";
     import TrafficChart from "$lib/components/TrafficChart.svelte";
     import AppShell from "$lib/components/AppShell.svelte";
@@ -85,7 +82,7 @@
 </script>
 
 <svelte:head>
-    <title>Pulse — Analytics</title>
+    <title>Pulse — Dashboard</title>
     <meta name="description" content="Private web analytics." />
 </svelte:head>
 
@@ -94,7 +91,7 @@
     siteId={data.siteId}
     sites={data.sites}
     interval={data.interval}
-    title="Analytics"
+    title="Dashboard"
     oninstall={() => (installationOpen = true)}
 >
     <div class="stack" class:dimmed={installationOpen} inert={installationOpen ? true : undefined}>
@@ -124,22 +121,22 @@
 
         <section class="panel totals" aria-label="Core metrics" data-reveal>
             <article>
-                <span class="kicker"><HugeiconsIcon icon={UserGroupIcon} size={14} strokeWidth={1.7} />Visitors</span>
+                <span class="kicker"><Users size={14} weight="fill" />Visitors</span>
                 <strong>{formatNumber(data.stats.visitors)}</strong>
                 <small><b class:up={growth >= 0} class:down={growth < 0}>{growthLabel}</b> vs previous · {periodLabel}</small>
             </article>
             <article>
-                <span class="kicker"><HugeiconsIcon icon={ViewIcon} size={14} strokeWidth={1.7} />Views</span>
+                <span class="kicker"><Eye size={14} weight="fill" />Views</span>
                 <strong>{formatNumber(data.stats.views)}</strong>
                 <small>{data.stats.pagesPerVisit.toFixed(2)} pages per visit</small>
             </article>
             <article>
-                <span class="kicker"><HugeiconsIcon icon={Activity01Icon} size={14} strokeWidth={1.7} />Sessions</span>
+                <span class="kicker"><ChartLine size={14} weight="fill" />Sessions</span>
                 <strong>{formatNumber(data.stats.sessions)}</strong>
                 <small>{formatNumber(data.live.visitors)} live now</small>
             </article>
             <article>
-                <span class="kicker"><HugeiconsIcon icon={ArrowDown02Icon} size={14} strokeWidth={1.7} />Bounce</span>
+                <span class="kicker"><ArrowDown size={14} weight="fill" />Bounce</span>
                 <strong>{formatPercent(data.stats.bounceRate)}</strong>
                 <small>{conversion.toFixed(0)}% converted</small>
             </article>
@@ -167,7 +164,7 @@
                     <button type="button" onclick={() => clearFilter(key)}>
                         <span>{name}</span>
                         <strong>{value}</strong>
-                        <HugeiconsIcon icon={Cancel01Icon} size={12} strokeWidth={2} />
+                        <X size={12} weight="fill" />
                     </button>
                 {/each}
                 <p>Filtered.</p>
@@ -288,7 +285,7 @@
 <style>
     .dimmed { opacity: 0.46; transition: opacity 220ms ease; }
     .notices { display: grid; gap: 10px; }
-    .banner, .alert { margin: 0; padding: 14px 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); font-size: 13px; line-height: 1.5; }
+    .banner, .alert { margin: 0; padding: 14px 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); font-size: 13px; line-height: 1.5; }
     .banner.warn, .alert[data-severity="warning"], .alert[data-severity="critical"] { border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); }
     .alert { display: grid; grid-template-columns: auto 1fr auto; gap: 8px 14px; align-items: start; }
     .alert span, .alert b { color: var(--accent); font-size: 11px; text-transform: uppercase; }

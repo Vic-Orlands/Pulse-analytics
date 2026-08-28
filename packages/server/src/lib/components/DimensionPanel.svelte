@@ -1,20 +1,19 @@
 <script lang="ts">
-    import { HugeiconsIcon } from "@hugeicons/svelte";
-    import {
-        ArrowUpRight01Icon,
-        BrowserIcon,
-        Cancel01Icon,
-        ChromeIcon,
-        ComputerIcon,
-        ComputerTerminal01Icon,
-        Download01Icon,
-        LaptopIcon,
-        MoreHorizontalIcon,
-        SafariIcon,
-        SmartPhone01Icon,
-        Tablet01Icon,
-    } from "@hugeicons/core-free-icons";
+    import ArrowUpRight from "phosphor-svelte/lib/ArrowUpRight";
+    import Compass from "phosphor-svelte/lib/Compass";
+    import Desktop from "phosphor-svelte/lib/Desktop";
+    import DeviceMobile from "phosphor-svelte/lib/DeviceMobile";
+    import DeviceTablet from "phosphor-svelte/lib/DeviceTablet";
+    import DotsThree from "phosphor-svelte/lib/DotsThree";
+    import DownloadSimple from "phosphor-svelte/lib/DownloadSimple";
+    import Globe from "phosphor-svelte/lib/Globe";
+    import GoogleChromeLogo from "phosphor-svelte/lib/GoogleChromeLogo";
+    import Laptop from "phosphor-svelte/lib/Laptop";
+    import Terminal from "phosphor-svelte/lib/Terminal";
+    import X from "phosphor-svelte/lib/X";
     import type { CountRow } from "$lib/types";
+
+    type PhosphorIcon = typeof DeviceMobile;
 
     type DimensionMarker = "none" | "referrer" | "country" | "device" | "os" | "browser";
 
@@ -150,26 +149,26 @@
         return host.replace(/^www\./, "").slice(0, 1).toUpperCase();
     }
 
-    function deviceIcon(name: string) {
+    function deviceIcon(name: string): PhosphorIcon {
         const value = name.toLowerCase();
-        if (value.includes("mobile")) return SmartPhone01Icon;
-        if (value.includes("tablet")) return Tablet01Icon;
-        return ComputerIcon;
+        if (value.includes("mobile")) return DeviceMobile;
+        if (value.includes("tablet")) return DeviceTablet;
+        return Desktop;
     }
 
-    function osIcon(name: string) {
+    function osIcon(name: string): PhosphorIcon {
         const value = name.toLowerCase();
-        if (value.includes("mac") || value.includes("ios")) return LaptopIcon;
-        if (value.includes("android")) return SmartPhone01Icon;
-        if (value.includes("linux")) return ComputerTerminal01Icon;
-        return ComputerIcon;
+        if (value.includes("mac") || value.includes("ios")) return Laptop;
+        if (value.includes("android")) return DeviceMobile;
+        if (value.includes("linux")) return Terminal;
+        return Desktop;
     }
 
-    function browserIcon(name: string) {
+    function browserIcon(name: string): PhosphorIcon {
         const value = name.toLowerCase();
-        if (value.includes("chrome")) return ChromeIcon;
-        if (value.includes("safari")) return SafariIcon;
-        return BrowserIcon;
+        if (value.includes("chrome")) return GoogleChromeLogo;
+        if (value.includes("safari")) return Compass;
+        return Globe;
     }
 
     const COUNTRY_CODES: Record<string, string> = {
@@ -245,11 +244,14 @@
                         {:else if activeMarker === "referrer"}
                             <span class="mark glyph" aria-hidden="true">{referrerMark(label)}</span>
                         {:else if activeMarker === "device"}
-                            <span class="mark icon" aria-hidden="true"><HugeiconsIcon icon={deviceIcon(label)} size={14} strokeWidth={1.7} /></span>
+                            {@const Device = deviceIcon(label)}
+                            <span class="mark icon" aria-hidden="true"><Device size={14} weight="fill" /></span>
                         {:else if activeMarker === "os"}
-                            <span class="mark icon" aria-hidden="true"><HugeiconsIcon icon={osIcon(label)} size={14} strokeWidth={1.7} /></span>
+                            {@const Os = osIcon(label)}
+                            <span class="mark icon" aria-hidden="true"><Os size={14} weight="fill" /></span>
                         {:else if activeMarker === "browser"}
-                            <span class="mark icon" aria-hidden="true"><HugeiconsIcon icon={browserIcon(label)} size={14} strokeWidth={1.7} /></span>
+                            {@const Browser = browserIcon(label)}
+                            <span class="mark icon" aria-hidden="true"><Browser size={14} weight="fill" /></span>
                         {/if}
                         <span class="label" title={displayLabel(label)}>{displayLabel(label)}</span>
                         <strong>{formatValue(row[1])}</strong>
@@ -262,7 +264,7 @@
     <footer>
         <button type="button" class="ghost" onclick={openAll} disabled={rows.length === 0}>
             View all
-            <HugeiconsIcon icon={ArrowUpRight01Icon} size={13} strokeWidth={1.8} />
+            <ArrowUpRight size={13} weight="fill" />
         </button>
         <div class="more">
             <button
@@ -276,12 +278,12 @@
                     menuOpen = !menuOpen;
                 }}
             >
-                <HugeiconsIcon icon={MoreHorizontalIcon} size={15} strokeWidth={1.8} />
+                <DotsThree size={15} weight="fill" />
             </button>
             {#if menuOpen}
                 <div class="menu">
                     <button type="button" onclick={exportCsv} disabled={rows.length === 0}>
-                        <HugeiconsIcon icon={Download01Icon} size={14} strokeWidth={1.7} />
+                        <DownloadSimple size={14} weight="fill" />
                         Export CSV
                     </button>
                 </div>
@@ -299,7 +301,7 @@
                 <h3 id="dimension-title">{active?.label ?? "All"}</h3>
             </div>
             <button type="button" class="ghost icon-only" onclick={closeAll} aria-label="Close list">
-                <HugeiconsIcon icon={Cancel01Icon} size={16} strokeWidth={1.7} />
+                <X size={16} weight="fill" />
             </button>
         </header>
         <input
@@ -342,7 +344,7 @@
         display: grid;
         grid-template-rows: auto 1fr auto;
         min-height: 100%;
-        border-radius: 12px;
+        border-radius: 8px;
         box-shadow: none;
     }
 
@@ -487,7 +489,7 @@
         gap: 6px;
         padding: 0 10px;
         border: 1px solid var(--line);
-        border-radius: 9px;
+        border-radius: 8px;
         color: var(--ink);
         background: transparent;
         font-size: 12px;
@@ -522,7 +524,7 @@
         min-width: 160px;
         padding: 4px;
         border: 1px solid var(--line);
-        border-radius: 10px;
+        border-radius: 8px;
         background: var(--panel);
         box-shadow: var(--shadow);
     }
@@ -566,7 +568,7 @@
         max-height: min(72vh, 640px);
         overflow: hidden;
         border: 1px solid var(--line);
-        border-radius: 16px;
+        border-radius: 8px;
         background: var(--panel);
         box-shadow: var(--shadow);
         transform: translate(-50%, -50%);
@@ -586,7 +588,7 @@
         min-height: 36px;
         padding: 0 12px;
         border: 1px solid var(--line);
-        border-radius: 10px;
+        border-radius: 8px;
         color: inherit;
         background: color-mix(in srgb, var(--paper) 70%, transparent);
     }

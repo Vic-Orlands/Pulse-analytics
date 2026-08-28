@@ -5,6 +5,9 @@ const PUBLIC_EXACT = new Set([
     "/cache",
     "/tracker.js",
     "/favicon.svg",
+    "/favicon.png",
+    "/favicon.ico",
+
     "/pulse-preview.mp4",
 ]);
 

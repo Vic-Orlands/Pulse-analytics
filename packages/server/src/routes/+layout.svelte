@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
+    import IconContext from "phosphor-svelte/lib/IconContext";
     import "../app.css";
     import { appearance } from "$lib/appearance.svelte";
 
@@ -8,4 +9,6 @@
     onMount(() => appearance.hydrate());
 </script>
 
-{@render children()}
+<IconContext values={{ weight: "fill" }}>
+    {@render children()}
+</IconContext>
