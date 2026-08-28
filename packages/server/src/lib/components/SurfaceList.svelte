@@ -52,7 +52,7 @@
 
     .rank {
         color: var(--muted);
-        font-family: "IBM Plex Mono", monospace;
+        font-variant-numeric: tabular-nums;
         font-size: 11px;
     }
 
@@ -82,13 +82,13 @@
     }
 
     .metrics strong {
-        font-family: "IBM Plex Mono", monospace;
+        font-variant-numeric: tabular-nums;
         font-size: 13px;
     }
 
     .metrics small {
         color: var(--muted);
-        font-family: "IBM Plex Mono", monospace;
+        font-variant-numeric: tabular-nums;
         font-size: 11px;
     }
 </style>

@@ -17,7 +17,7 @@
         <header class="chooser-head">
             <div>
                 <span class="kicker">Pulse</span>
-                <h1 id="welcome-title" class="serif">Choose how you want to read traffic.</h1>
+                <h1 id="welcome-title">Choose how you want to read traffic.</h1>
             </div>
             <p>Two views of the same data. You can change this any time from the sidebar.</p>
         </header>
@@ -83,13 +83,14 @@
 
     h1, h2 {
         margin: 0;
-        font-weight: 400;
-        letter-spacing: -0.045em;
+        font-weight: 600;
+        letter-spacing: -0.02em;
     }
 
     h1 {
-        font-size: clamp(40px, 5.4vw, 64px);
-        line-height: 0.98;
+        font-size: var(--text-lg);
+        font-weight: 600;
+        line-height: 1.3;
     }
 
     .chooser-head > p,
@@ -147,8 +148,8 @@
     [data-preview="signal"] .chart-two { stroke: #7ec4cc; }
 
     .theme-meta { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 12px; padding: 17px 18px 10px; }
-    .theme-meta > span { font-family: "IBM Plex Mono", monospace; font-size: 12px; }
-    h3 { margin: -2px 0 4px; font-size: 22px; font-weight: 650; letter-spacing: -0.03em; }
+    .theme-meta > span { font-size: 12px; }
+    h3 { margin: -2px 0 4px; font-size: var(--text-lg); font-weight: 600; letter-spacing: -0.02em; }
     .theme-meta p { margin: 0; color: var(--muted, #6f6c64); font-size: 13px; line-height: 1.45; }
     .theme-meta strong { color: var(--accent, #d24a3e); font-size: 12px; text-transform: uppercase; }
     .swatches { display: flex; padding: 0 18px 16px 64px; }
@@ -157,7 +158,7 @@
 
     section.compact { width: 100%; padding: 0; }
     .compact-head { margin-bottom: 20px; }
-    .compact-head h2 { margin-bottom: 7px; font-size: 28px; font-weight: 650; }
+    .compact-head h2 { margin-bottom: 7px; font-size: var(--text-lg); font-weight: 600; }
     .compact .theme-grid { margin-top: 0; }
     .compact .preview { height: 158px; }
 

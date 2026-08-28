@@ -121,7 +121,7 @@
     }
 
     h2, p, blockquote { margin: 0; }
-    h2 { margin-top: 8px; font-size: 28px; font-weight: 650; letter-spacing: -0.04em; line-height: 1.1; }
+    h2 { margin-top: 8px; font-size: var(--text-lg); font-weight: 600; letter-spacing: -0.02em; line-height: 1.3; }
 
     .inspector > header button {
         display: grid;
@@ -139,8 +139,8 @@
     .event-summary > strong, .payload blockquote {
         display: block;
         margin: 14px 0 8px;
-        font-size: 18px;
-        font-weight: 650;
+        font-size: var(--text-lg);
+        font-weight: 600;
         line-height: 1.35;
     }
     .payload blockquote {
@@ -148,7 +148,6 @@
         overflow: auto;
         padding: 0;
         border: 0;
-        font-family: "IBM Plex Mono", monospace;
         font-size: 13px;
         white-space: pre-wrap;
         word-break: break-word;
@@ -168,7 +167,6 @@
         border-radius: 12px;
         color: var(--muted);
         background: color-mix(in srgb, var(--ink) 4%, var(--paper));
-        font-family: "IBM Plex Mono", monospace;
         font-size: 12px;
         white-space: pre-wrap;
         word-break: break-word;

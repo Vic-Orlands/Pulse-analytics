@@ -467,7 +467,6 @@
     strong {
         margin-left: 12px;
         color: var(--muted);
-        font-family: "IBM Plex Mono", ui-monospace, monospace;
         font-size: 12px;
         font-weight: 500;
         font-variant-numeric: tabular-nums;
@@ -579,7 +578,7 @@
 
     .sheet h3 {
         margin-top: 4px;
-        font-size: 18px;
+        font-size: var(--text-lg);
     }
 
     .sheet input {

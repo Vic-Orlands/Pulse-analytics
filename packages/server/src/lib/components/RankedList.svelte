@@ -46,7 +46,7 @@
 <style>
     .ranking { min-width: 0; padding: 16px 16px 8px; }
     header { display: flex; align-items: end; justify-content: space-between; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
-    h2 { margin: 6px 0 0; font-size: 20px; font-weight: 650; letter-spacing: -0.03em; }
+    h2 { margin: 6px 0 0; font-size: var(--text-lg); font-weight: 600; letter-spacing: -0.02em; }
     ol { margin: 0; padding: 0; list-style: none; }
     li {
         display: grid;
@@ -56,7 +56,7 @@
         gap: 9px;
         border-bottom: 1px solid var(--line);
     }
-    .rank, strong { color: var(--muted); font-family: "IBM Plex Mono", monospace; font-size: 12px; font-weight: 500; }
+    .rank, strong { color: var(--muted); font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums; }
     .label { min-width: 0; }
     .label > span { display: block; overflow: hidden; color: var(--ink); font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
     .plot { position: relative; height: 2px; margin-top: 8px; background: var(--line); border-radius: 99px; }

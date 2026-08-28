@@ -53,7 +53,7 @@
         <header class="sticky top-0 z-[2] flex items-start justify-between border-b border-[var(--line)] bg-[color-mix(in_srgb,var(--panel)_94%,transparent)] p-6 backdrop-blur-xl">
             <div>
                 <span class="kicker">Collector setup</span>
-                <h2 class="serif mt-2 text-4xl font-normal tracking-[-.035em]" id="installation-title">Add Pulse to any app</h2>
+                <h2 class="mt-2 text-lg font-semibold tracking-[-.02em]" id="installation-title">Add Pulse to any app</h2>
             </div>
             <button class="grid size-9 cursor-pointer place-items-center rounded-xl border-0 bg-transparent text-[var(--ink)] shadow-[0_0_0_1px_var(--line)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" bind:this={closeButton} onclick={onclose} aria-label="Close tracking installations"><HugeiconsIcon icon={Cancel01Icon} size={17} strokeWidth={1.6} /></button>
         </header>
@@ -63,45 +63,45 @@
         </p>
 
         <div class="mx-6 mb-6 flex justify-between gap-5 border-y border-[var(--line)] py-3">
-            <span class="font-mono text-xs uppercase tracking-[.07em] text-[var(--muted)]">Endpoint</span>
-            <code class="overflow-hidden text-ellipsis font-mono text-xs text-[var(--accent)]">{origin}/collect</code>
+            <span class="text-xs font-medium uppercase tracking-[.04em] text-[var(--muted)]">Endpoint</span>
+            <code class="overflow-hidden text-ellipsis text-xs text-[var(--accent)]">{origin}/collect</code>
         </div>
 
         <article class="relative mx-6 mb-6 border-y border-[var(--line)] bg-[color-mix(in_srgb,var(--paper)_56%,transparent)] p-4 before:absolute before:-inset-y-2 before:left-0 before:w-px before:bg-[var(--line)] after:absolute after:-inset-y-2 after:right-0 after:w-px after:bg-[var(--line)]">
             <header class="flex items-center gap-3">
-                <span class="font-mono text-xs text-[var(--muted)]">01</span>
+                <span class="text-xs text-[var(--muted)]">01</span>
                 <strong class="text-xs font-medium">Sample snippet</strong>
                 <i class="ml-auto size-1.5 rounded-full bg-[var(--accent)]"></i>
             </header>
             <p class="mt-3 text-xs leading-5 text-[var(--muted)]">Replace <code class="text-[var(--ink)]">{SAMPLE_SITE_ID}</code> with a short name for the product. If you omit <code class="text-[var(--ink)]">data-site-id</code>, Pulse uses the hostname instead.</p>
-            <pre class="my-4 overflow-x-auto bg-[color-mix(in_srgb,var(--ink)_3%,transparent)] p-3 font-mono text-xs leading-5 whitespace-pre-wrap text-[var(--muted)] break-words">{sample}</pre>
-            <button class="flex cursor-pointer items-center gap-2 border-0 bg-transparent px-3 py-2 font-mono text-xs uppercase text-[var(--ink)] shadow-[0_0_0_1px_var(--line)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" onclick={() => copy("sample", sample)}>
+            <pre class="my-4 overflow-x-auto bg-[color-mix(in_srgb,var(--ink)_3%,transparent)] p-3 text-xs leading-5 whitespace-pre-wrap text-[var(--muted)] break-words">{sample}</pre>
+            <button class="flex cursor-pointer items-center gap-2 border-0 bg-transparent px-3 py-2 text-xs font-medium uppercase text-[var(--ink)] shadow-[0_0_0_1px_var(--line)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" onclick={() => copy("sample", sample)}>
                 <HugeiconsIcon icon={copied === "sample" ? Tick02Icon : Copy01Icon} size={14} strokeWidth={1.7} />{copied === "sample" ? "Copied" : "Copy snippet"}
             </button>
         </article>
 
         <section class="px-6 pb-2">
-            <span class="font-mono text-xs uppercase tracking-[.07em] text-[var(--muted)]">Where to add it</span>
-            <h3 class="mt-2 font-serif text-3xl font-normal">Framework shells</h3>
+            <span class="text-xs font-medium uppercase tracking-[.04em] text-[var(--muted)]">Where to add it</span>
+            <h3 class="mt-2 text-lg font-semibold">Framework shells</h3>
             <div class="mt-4 flex flex-wrap" aria-label="Framework">
                 {#each guides as guide (guide.id)}
-                    <button class="min-w-[72px] cursor-pointer border-0 px-3 py-2 font-mono text-xs uppercase text-[var(--muted)] shadow-[0_0_0_1px_var(--line)] {framework === guide.id ? 'bg-[var(--ink)] text-[var(--paper)]' : 'bg-transparent'}" onclick={() => (framework = guide.id)} aria-pressed={framework === guide.id}>{guide.label}</button>
+                    <button class="min-w-[72px] cursor-pointer border-0 px-3 py-2 text-xs font-medium uppercase text-[var(--muted)] shadow-[0_0_0_1px_var(--line)] {framework === guide.id ? 'bg-[var(--ink)] text-[var(--paper)]' : 'bg-transparent'}" onclick={() => (framework = guide.id)} aria-pressed={framework === guide.id}>{guide.label}</button>
                 {/each}
             </div>
             {#if selected}
-                <p class="mt-4 text-xs leading-6 text-[var(--muted)]"><strong class="font-mono text-[var(--ink)]">{selected.file}</strong> — {selected.hint}</p>
-                <pre class="my-4 overflow-x-auto bg-[color-mix(in_srgb,var(--ink)_3%,transparent)] p-3 font-mono text-xs leading-5 whitespace-pre-wrap text-[var(--muted)] break-words">{selected.code}</pre>
-                <button class="flex cursor-pointer items-center gap-2 border-0 bg-transparent px-3 py-2 font-mono text-xs uppercase text-[var(--ink)] shadow-[0_0_0_1px_var(--line)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" onclick={() => copy(selected.id, selected.code)}>
+                <p class="mt-4 text-xs leading-6 text-[var(--muted)]"><strong class="text-[var(--ink)]">{selected.file}</strong> — {selected.hint}</p>
+                <pre class="my-4 overflow-x-auto bg-[color-mix(in_srgb,var(--ink)_3%,transparent)] p-3 text-xs leading-5 whitespace-pre-wrap text-[var(--muted)] break-words">{selected.code}</pre>
+                <button class="flex cursor-pointer items-center gap-2 border-0 bg-transparent px-3 py-2 text-xs font-medium uppercase text-[var(--ink)] shadow-[0_0_0_1px_var(--line)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" onclick={() => copy(selected.id, selected.code)}>
                     <HugeiconsIcon icon={copied === selected.id ? Tick02Icon : Copy01Icon} size={14} strokeWidth={1.7} />{copied === selected.id ? "Copied" : `Copy ${selected.label} snippet`}
                 </button>
             {/if}
         </section>
 
         <section class="m-6 border-t border-[var(--line)] pt-6">
-            <span class="font-mono text-xs uppercase tracking-[.07em] text-[var(--muted)]">Custom signals</span>
-            <h3 class="mt-2 font-serif text-3xl font-normal">Declare meaningful events</h3>
+            <span class="text-xs font-medium uppercase tracking-[.04em] text-[var(--muted)]">Custom signals</span>
+            <h3 class="mt-2 text-lg font-semibold">Declare meaningful events</h3>
             <p class="mt-3 text-xs leading-5 text-[var(--muted)]">Copy, outbound clicks, downloads, and screenshots are recorded automatically. Use this only for extra product events.</p>
-            <pre class="mt-4 overflow-x-auto bg-[color-mix(in_srgb,var(--ink)_3%,transparent)] p-3 font-mono text-xs leading-5 whitespace-pre-wrap text-[var(--muted)] break-words">{eventExample}</pre>
+            <pre class="mt-4 overflow-x-auto bg-[color-mix(in_srgb,var(--ink)_3%,transparent)] p-3 text-xs leading-5 whitespace-pre-wrap text-[var(--muted)] break-words">{eventExample}</pre>
         </section>
         <span class="sr-only" aria-live="polite">{copied ? `Snippet copied for ${copied}` : ""}</span>
     </div>

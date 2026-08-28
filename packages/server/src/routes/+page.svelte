@@ -302,20 +302,20 @@
     .banner, .alert { margin: 0; padding: 14px 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); font-size: 13px; line-height: 1.5; }
     .banner.warn, .alert[data-severity="warning"], .alert[data-severity="critical"] { border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); }
     .alert { display: grid; grid-template-columns: auto 1fr auto; gap: 8px 14px; align-items: start; }
-    .alert span, .alert b { color: var(--accent); font-family: "IBM Plex Mono", monospace; font-size: 11px; text-transform: uppercase; }
+    .alert span, .alert b { color: var(--accent); font-size: 11px; text-transform: uppercase; }
     .alert p { margin: 4px 0 0; color: var(--muted); }
     .totals { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
     .totals article { min-width: 0; padding: 18px 20px 16px; }
     .totals article + article { border-left: 1px solid var(--line); }
     .totals .kicker { color: var(--muted); }
     .totals .kicker :global(svg) { color: var(--accent); }
-    .totals strong { display: block; margin: 10px 0 6px; font-size: clamp(26px, 2.4vw, 34px); line-height: 1; letter-spacing: -0.04em; }
+    .totals strong { display: block; margin: 8px 0 6px; font-size: var(--text-lg); font-weight: 600; line-height: 1.3; letter-spacing: -0.02em; }
     .totals small { color: var(--muted); font-size: 12px; }
     .totals .up { color: var(--ok); }
     .totals .down { color: var(--accent); }
     .chart-panel, .funnel { padding: 22px 22px 16px; }
     .section-head { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
-    .section-head h2, .ledger-callout h2, .funnel-steps h3 { margin: 6px 0 0; font-size: 22px; font-weight: 650; letter-spacing: -0.03em; }
+    .section-head h2, .ledger-callout h2, .funnel-steps h3 { margin: 4px 0 0; font-size: var(--text-lg); font-weight: 600; letter-spacing: -0.02em; }
     .chart-tools { display: flex; max-width: 420px; align-items: center; gap: 14px; }
     .chart-tools p { margin: 0; color: var(--muted); font-size: 13px; }
     .chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
@@ -342,11 +342,11 @@
     .funnel-steps article { position: relative; min-height: 150px; padding: 8px 18px 22px; overflow: hidden; }
     .funnel-steps article + article { border-left: 1px solid var(--line); }
     .funnel-steps small { color: var(--muted); font-size: 12px; }
-    .funnel-steps strong { font-family: "IBM Plex Mono", monospace; }
+    .funnel-steps strong { font-variant-numeric: tabular-nums; }
     .funnel-steps i { position: absolute; bottom: 0; left: 0; width: var(--share); height: 3px; background: var(--accent); }
     .ledger-callout { display: flex; align-items: end; justify-content: space-between; gap: 24px; padding: 24px; color: inherit; text-decoration: none; }
     .ledger-callout p { max-width: 520px; margin: 8px 0 0; color: var(--muted); }
-    .ledger-callout strong { font-family: "IBM Plex Mono", monospace; font-size: 12px; text-transform: uppercase; }
+    .ledger-callout strong { font-size: 12px; font-weight: 600; text-transform: uppercase; }
     .ledger-callout strong span { color: var(--accent); }
     .ledger-callout:hover { background: color-mix(in srgb, var(--accent) 6%, var(--panel)); }
     [data-reveal] { opacity: 0; }

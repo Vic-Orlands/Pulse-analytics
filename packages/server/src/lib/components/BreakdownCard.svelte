@@ -83,9 +83,9 @@
         border-bottom: 1px solid var(--line);
     }
     .row:last-child { border-bottom: 0; }
-    .rank { color: var(--muted); font-family: "IBM Plex Mono", monospace; font-size: 11px; }
+    .rank { color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
     .label-wrap { min-width: 0; }
     .label { display: block; overflow: hidden; font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
     .bar { display: block; width: var(--width); height: 3px; margin-top: 6px; border-radius: 99px; background: var(--accent); }
-    strong { font-family: "IBM Plex Mono", monospace; font-size: 12px; font-weight: 500; }
+    strong { font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums; }
 </style>

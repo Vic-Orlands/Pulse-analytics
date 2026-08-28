@@ -18,7 +18,7 @@
     <section class="panel">
         <span class="pulse-mark" aria-hidden="true"><i></i><i></i><i></i></span>
         <p class="kicker">Private dashboard</p>
-        <h1 class="serif">Welcome back</h1>
+        <h1>Welcome back</h1>
         <p>Enter the shared password to continue to your analytics.</p>
         <form method="POST" use:enhance>
             <input class="username" name="username" value="counterscale" autocomplete="username" tabindex="-1" aria-hidden="true" />
@@ -51,9 +51,10 @@
 
     h1 {
         margin: 10px 0 12px;
-        font-size: 48px;
-        letter-spacing: -0.05em;
-        line-height: 0.95;
+        font-size: var(--text-lg);
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        line-height: 1.3;
     }
 
     section > p {

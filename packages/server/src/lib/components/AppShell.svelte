@@ -43,7 +43,7 @@
     <aside class="sidebar" aria-label="Pulse navigation">
         <a class="brand" href={`/?${query}`} aria-label="Pulse analytics home">
             <span class="pulse-mark" aria-hidden="true"><i></i><i></i><i></i></span>
-            <span class="serif">Pulse</span>
+            <span>Pulse</span>
         </a>
 
         <form class="site-form" method="GET" action={current === "signals" ? "/signals" : "/"}>
@@ -89,7 +89,7 @@
         <header class="topbar">
             <div>
                 <p class="kicker">{siteId || "Pulse"}</p>
-                <h1 class="serif">{title}</h1>
+                <h1>{title}</h1>
             </div>
             <div class="segmented" aria-label="Time period">
                 {#each periods as period (period.id)}
@@ -123,79 +123,84 @@
         display: flex;
         height: 100vh;
         flex-direction: column;
-        gap: 28px;
-        padding: 28px 22px;
+        gap: 20px;
+        padding: 20px 16px;
         border-right: 1px solid var(--line);
-        background: color-mix(in srgb, var(--panel) 88%, transparent);
+        background: var(--paper);
     }
 
     .brand {
         display: inline-flex;
         align-items: center;
         gap: 10px;
+        padding: 4px 8px;
         color: inherit;
-        font-size: 28px;
-        letter-spacing: -0.04em;
+        font-size: var(--text-lg);
+        font-weight: 600;
+        letter-spacing: -0.02em;
         text-decoration: none;
     }
 
     .site-form label {
         display: grid;
-        gap: 8px;
+        gap: 6px;
     }
 
     .site-form select {
         width: 100%;
-        height: 42px;
-        padding: 0 12px;
+        height: 36px;
+        padding: 0 10px;
         border: 1px solid var(--line);
-        border-radius: 12px;
+        border-radius: 10px;
         color: var(--ink);
-        background: var(--paper);
+        background: var(--panel);
         cursor: pointer;
     }
 
     .nav,
     .sidebar-foot {
         display: grid;
-        gap: 6px;
+        gap: 4px;
     }
 
     .nav {
-        margin-top: 8px;
+        padding-top: 4px;
     }
 
     .sidebar-foot {
         margin-top: auto;
+        padding-top: 12px;
+        border-top: 1px solid var(--line);
     }
 
     .nav a,
     .sidebar-foot button {
         display: flex;
-        min-height: 42px;
+        min-height: 36px;
         align-items: center;
         gap: 10px;
-        padding: 0 12px;
+        padding: 0 10px;
         border: 0;
-        border-radius: 12px;
+        border-radius: 10px;
         color: var(--muted);
         background: transparent;
-        font-size: 14px;
-        font-weight: 600;
+        font-size: 13px;
+        font-weight: 500;
         text-align: left;
         text-decoration: none;
         cursor: pointer;
     }
 
     .nav a:hover,
-    .sidebar-foot button:hover,
-    .nav a.active {
+    .sidebar-foot button:hover {
         color: var(--ink);
         background: color-mix(in srgb, var(--ink) 6%, transparent);
     }
 
     .nav a.active {
-        box-shadow: inset 3px 0 0 var(--accent);
+        color: var(--ink);
+        background: color-mix(in srgb, var(--ink) 8%, transparent);
+        font-weight: 600;
     }
 
     .workspace {
@@ -207,21 +212,22 @@
         z-index: 20;
         top: 0;
         display: flex;
-        min-height: 84px;
+        min-height: 64px;
         align-items: center;
         justify-content: space-between;
-        gap: 20px;
-        padding: 18px 28px;
+        gap: 16px;
+        padding: 12px 24px;
         border-bottom: 1px solid var(--line);
         background: color-mix(in srgb, var(--paper) 88%, transparent);
         backdrop-filter: blur(16px);
     }
 
     .topbar h1 {
-        margin: 4px 0 0;
-        font-size: 28px;
-        letter-spacing: -0.04em;
-        line-height: 1;
+        margin: 2px 0 0;
+        font-size: var(--text-lg);
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        line-height: 1.3;
     }
 
     .canvas {
@@ -273,8 +279,8 @@
 
         .nav a.active {
             box-shadow: none;
-            background: var(--ink);
-            color: var(--paper);
+            background: color-mix(in srgb, var(--ink) 10%, transparent);
+            color: var(--ink);
         }
 
         .topbar {
