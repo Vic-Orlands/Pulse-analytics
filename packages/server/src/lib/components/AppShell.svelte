@@ -1,13 +1,11 @@
 <script lang="ts">
-    import { HugeiconsIcon } from "@hugeicons/svelte";
-    import {
-        Activity03Icon,
-        CodeIcon,
-        Home04Icon,
-        Moon01Icon,
-        Sun01Icon,
-    } from "@hugeicons/core-free-icons";
+    import Code from "phosphor-svelte/lib/Code";
+    import House from "phosphor-svelte/lib/House";
+    import Moon from "phosphor-svelte/lib/Moon";
+    import Pulse from "phosphor-svelte/lib/Pulse";
+    import Sun from "phosphor-svelte/lib/Sun";
     import type { Snippet } from "svelte";
+    import PulseMark from "$lib/components/PulseMark.svelte";
     import { appearance } from "$lib/appearance.svelte";
     import { resolve } from "$app/paths";
     import { goto } from "$app/navigation";
@@ -52,8 +50,9 @@
 
 <div class="shell" data-theme={appearance.id}>
     <aside class="sidebar" aria-label="Pulse navigation">
-        <a class="brand" href={resolve(`/dashboard?${query}`)} aria-label="Pulse analytics home">
-            <span class="pulse-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <a class="brand" href={resolve(`/dashboard?${query}`)} aria-label="Pulse Analytics home">
+            <PulseMark size={18} />
+            Pulse Analytics
         </a>
 
         <div class="site-form">
@@ -73,22 +72,26 @@
 
         <nav class="nav">
             <a class:active={current === "dashboard"} href={resolve(`/dashboard?${query}`)}>
-                <HugeiconsIcon icon={Home04Icon} size={16} strokeWidth={1.7} />
+                <House size={16} weight="fill" />
                 Dashboard
             </a>
             <a class:active={current === "signals"} href={resolve(`/signals?${query}`)}>
-                <HugeiconsIcon icon={Activity03Icon} size={16} strokeWidth={1.7} />
+                <Pulse size={16} weight="fill" />
                 Signals
             </a>
         </nav>
 
         <div class="sidebar-foot">
             <button id="installation-trigger" type="button" onclick={oninstall}>
-                <HugeiconsIcon icon={CodeIcon} size={16} strokeWidth={1.7} />
+                <Code size={16} weight="fill" />
                 Install tracking
             </button>
             <button type="button" onclick={() => appearance.toggle()}>
-                <HugeiconsIcon icon={appearance.id === "signal" ? Sun01Icon : Moon01Icon} size={16} strokeWidth={1.7} />
+                {#if appearance.id === "signal"}
+                    <Sun size={16} weight="fill" />
+                {:else}
+                    <Moon size={16} weight="fill" />
+                {/if}
                 {appearance.id === "signal" ? "Light" : "Dark"}
             </button>
         </div>
@@ -96,16 +99,18 @@
 
     <div class="workspace">
         <header class="topbar">
-            <h1>{title}</h1>
-            <div class="segmented" aria-label="Time period">
-                {#each periods as period (period.id)}
-                    <a
-                        class:active={interval === period.id}
-                        href={resolve(`${current === "signals" ? "/signals" : "/dashboard"}?site=${encodeURIComponent(siteId)}&interval=${period.id}`)}
-                    >
-                        {period.label}
-                    </a>
-                {/each}
+            <div class="topbar-inner">
+                <h1>{title}</h1>
+                <div class="segmented" aria-label="Time period">
+                    {#each periods as period (period.id)}
+                        <a
+                            class:active={interval === period.id}
+                            href={resolve(`${current === "signals" ? "/signals" : "/dashboard"}?site=${encodeURIComponent(siteId)}&interval=${period.id}`)}
+                        >
+                            {period.label}
+                        </a>
+                    {/each}
+                </div>
             </div>
         </header>
         <div class="canvas">
@@ -138,13 +143,14 @@
     .brand {
         display: inline-flex;
         align-items: center;
-        gap: 10px;
-        padding: 4px 8px;
+        gap: 8px;
+        padding: 4px 4px;
         color: inherit;
-        font-size: var(--text-lg);
+        font-size: 13px;
         font-weight: 500;
         letter-spacing: -0.02em;
         text-decoration: none;
+        white-space: nowrap;
     }
 
     .site-form label {
@@ -157,7 +163,7 @@
         height: 36px;
         padding: 0 10px;
         border: 1px solid var(--line);
-        border-radius: 10px;
+        border-radius: 8px;
         color: var(--ink);
         background: var(--panel);
         cursor: pointer;
@@ -187,7 +193,7 @@
         gap: 10px;
         padding: 0 10px;
         border: 0;
-        border-radius: 10px;
+        border-radius: 8px;
         color: var(--muted);
         background: transparent;
         font-size: 13px;
@@ -217,13 +223,18 @@
         position: sticky;
         z-index: 20;
         top: 0;
+        padding: 12px 0;
+        background: var(--paper);
+    }
+
+    .topbar-inner {
         display: flex;
-        min-height: 64px;
+        width: min(1180px, calc(100% - 48px));
+        min-height: 40px;
+        margin: 0 auto;
         align-items: center;
         justify-content: space-between;
         gap: 16px;
-        padding: 12px 24px;
-        background: var(--paper);
     }
 
     .topbar h1 {
@@ -258,7 +269,7 @@
             gap: 8px;
             padding: 10px;
             border: 1px solid var(--line);
-            border-radius: 18px;
+            border-radius: 8px;
             background: var(--panel);
         }
 
@@ -286,10 +297,11 @@
             color: var(--ink);
         }
 
-        .topbar {
+        .topbar-inner {
+            width: min(100% - 32px, 1180px);
             align-items: flex-start;
             flex-direction: column;
-            padding: 18px 20px 16px;
+            padding: 6px 0 4px;
         }
 
         .canvas {

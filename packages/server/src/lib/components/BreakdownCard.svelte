@@ -1,19 +1,18 @@
 <script lang="ts">
-    import { HugeiconsIcon } from "@hugeicons/svelte";
-    import type { IconSvgElement } from "@hugeicons/svelte";
+    import type { Component } from "svelte";
     import type { CountRow } from "$lib/types";
 
     let {
         title,
         eyebrow,
         rows,
-        icon,
+        icon: Icon,
         valueLabel = "Visitors",
     }: {
         title: string;
         eyebrow: string;
         rows: CountRow[];
-        icon: IconSvgElement;
+        icon: Component<{ size?: number | string; weight?: "fill" | "regular" | "bold" | "duotone" | "light" | "thin" }>;
         valueLabel?: string;
     } = $props();
 
@@ -23,7 +22,7 @@
 <section class="panel">
     <header>
         <div class="title-mark">
-            <span class="icon"><HugeiconsIcon {icon} size={15} strokeWidth={1.7} /></span>
+            <span class="icon"><Icon size={15} weight="fill" /></span>
             <div>
                 <span class="kicker">{eyebrow}</span>
                 <h2>{title}</h2>

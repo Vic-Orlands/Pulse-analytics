@@ -18,6 +18,8 @@ describe("isPublicPath", () => {
         expect(isPublicPath("/tracker.js")).toBe(true);
         expect(isPublicPath("/pulse-preview.mp4")).toBe(true);
         expect(isPublicPath("/favicon.svg")).toBe(true);
+        expect(isPublicPath("/favicon.png")).toBe(true);
+        expect(isPublicPath("/favicon.ico")).toBe(true);
         expect(isPublicPath("/collect")).toBe(true);
     });
 });

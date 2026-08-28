@@ -3,6 +3,7 @@
     import { onMount } from "svelte";
     import type { PageProps } from "./$types";
     import { resolve } from "$app/paths";
+    import PulseMark from "$lib/components/PulseMark.svelte";
 
     let { form }: PageProps = $props();
     let passwordInput: HTMLInputElement;
@@ -17,7 +18,7 @@
 
 <main>
     <section>
-        <span class="pulse-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <div class="mark" aria-hidden="true"><PulseMark size={18} /></div>
         <h1>Welcome back</h1>
         <p>Owner password. No signup.</p>
         <form method="POST" use:enhance>
@@ -46,7 +47,7 @@
         width: min(360px, 100%);
     }
 
-    .pulse-mark { margin-bottom: 18px; }
+    .mark { margin-bottom: 18px; }
 
     h1 {
         margin: 8px 0 8px;

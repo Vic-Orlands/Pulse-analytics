@@ -1,6 +1,5 @@
 <script lang="ts">
-    import { HugeiconsIcon } from "@hugeicons/svelte";
-    import { Cancel01Icon } from "@hugeicons/core-free-icons";
+    import X from "phosphor-svelte/lib/X";
     import type { AnalyticsEvent } from "$lib/types";
 
     let { event, onclose }: { event: AnalyticsEvent | null; onclose: () => void } = $props();
@@ -33,7 +32,7 @@
                 <span class="kicker">{event.id} · {names[event.type]}</span>
                 <h2 id="event-title">{event.label}</h2>
             </div>
-            <button bind:this={closeButton} onclick={onclose} aria-label="Close event details"><HugeiconsIcon icon={Cancel01Icon} size={17} strokeWidth={1.6} /></button>
+            <button bind:this={closeButton} onclick={onclose} aria-label="Close event details"><X size={17} weight="fill" /></button>
         </header>
 
         {#if (event.type === "copy" || event.type === "outbound" || event.type === "download") && event.detail}
@@ -103,7 +102,7 @@
         overflow-y: auto;
         color: var(--ink);
         background: var(--panel);
-        border-radius: 20px;
+        border-radius: 8px;
         box-shadow: var(--shadow);
     }
 
@@ -129,7 +128,7 @@
         height: 36px;
         place-items: center;
         border: 1px solid var(--line);
-        border-radius: 12px;
+        border-radius: 8px;
         color: var(--ink);
         background: transparent;
         cursor: pointer;
@@ -154,7 +153,7 @@
     }
     .event-summary p, .payload p { color: var(--muted); font-size: 13px; line-height: 1.5; }
     .inspector > section { padding: 22px; border-bottom: 1px solid var(--line); }
-    dl { display: grid; grid-template-columns: 1fr 1fr; margin: 16px 0 0; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+    dl { display: grid; grid-template-columns: 1fr 1fr; margin: 16px 0 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
     dl > div { min-width: 0; padding: 12px; border-bottom: 1px solid var(--line); }
     dl > div:nth-child(2n) { border-left: 1px solid var(--line); }
     dl > div:nth-last-child(-n+2) { border-bottom: 0; }
@@ -164,7 +163,7 @@
         overflow-x: auto;
         margin: 12px 0 0;
         padding: 12px;
-        border-radius: 12px;
+        border-radius: 8px;
         color: var(--muted);
         background: color-mix(in srgb, var(--ink) 4%, var(--paper));
         font-size: 12px;

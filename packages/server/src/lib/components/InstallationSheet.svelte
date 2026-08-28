@@ -1,7 +1,8 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { HugeiconsIcon } from "@hugeicons/svelte";
-    import { Cancel01Icon, Copy01Icon, Tick02Icon } from "@hugeicons/core-free-icons";
+    import Copy from "phosphor-svelte/lib/Copy";
+    import Check from "phosphor-svelte/lib/Check";
+    import X from "phosphor-svelte/lib/X";
     import { frameworkGuides, htmlSnippet, SAMPLE_SITE_ID } from "$lib/install-snippets";
 
     let { open, onclose }: { open: boolean; onclose: () => void } = $props();
@@ -49,13 +50,13 @@
 
 {#if open}
     <button class="fixed inset-0 z-[70] cursor-default border-0 bg-[color-mix(in_srgb,var(--ink)_25%,transparent)]" aria-label="Close install" onclick={onclose}></button>
-    <div class="fixed inset-y-3 right-3 z-[80] w-[min(680px,calc(100%-24px))] overflow-y-auto rounded-2xl bg-[var(--panel)] text-sm text-[var(--ink)] ring-1 ring-[var(--line)] max-[600px]:inset-x-2 max-[600px]:top-2 max-[600px]:bottom-[86px] max-[600px]:w-auto" role="dialog" aria-modal="true" aria-labelledby="installation-title">
+    <div class="fixed inset-y-3 right-3 z-[80] w-[min(680px,calc(100%-24px))] overflow-y-auto rounded-lg bg-[var(--panel)] text-sm text-[var(--ink)] ring-1 ring-[var(--line)] max-[600px]:inset-x-2 max-[600px]:top-2 max-[600px]:bottom-[86px] max-[600px]:w-auto" role="dialog" aria-modal="true" aria-labelledby="installation-title">
         <header class="sticky top-0 z-[2] flex items-start justify-between border-b border-[var(--line)] bg-[var(--panel)] p-6">
             <div>
                 <span class="kicker">Install</span>
                 <h2 class="mt-2 text-lg font-medium tracking-[-.02em]" id="installation-title">Add tracking</h2>
             </div>
-            <button class="grid size-9 cursor-pointer place-items-center rounded-xl border border-[var(--line)] bg-transparent text-[var(--ink)]" bind:this={closeButton} onclick={onclose} aria-label="Close install"><HugeiconsIcon icon={Cancel01Icon} size={17} strokeWidth={1.6} /></button>
+            <button class="grid size-9 cursor-pointer place-items-center rounded-lg border border-[var(--line)] bg-transparent text-[var(--ink)]" bind:this={closeButton} onclick={onclose} aria-label="Close install"><X size={17} weight="fill" /></button>
         </header>
 
         <p class="m-0 px-6 py-6 text-sm leading-6 text-[var(--muted)]">
@@ -75,7 +76,7 @@
             <p class="mt-3 text-xs leading-5 text-[var(--muted)]">Replace <code class="text-[var(--ink)]">{SAMPLE_SITE_ID}</code> with a short name. Hostname is used if you omit <code class="text-[var(--ink)]">data-site-id</code>.</p>
             <pre class="my-4 overflow-x-auto bg-[color-mix(in_srgb,var(--ink)_3%,transparent)] p-3 text-xs leading-5 whitespace-pre-wrap text-[var(--muted)] break-words">{sample}</pre>
             <button class="flex cursor-pointer items-center gap-2 border border-[var(--line)] bg-transparent px-3 py-2 text-xs font-medium uppercase text-[var(--ink)]" onclick={() => copy("sample", sample)}>
-                <HugeiconsIcon icon={copied === "sample" ? Tick02Icon : Copy01Icon} size={14} strokeWidth={1.7} />{copied === "sample" ? "Copied" : "Copy"}
+                {#if copied === "sample"}<Check size={14} weight="fill" />{:else}<Copy size={14} weight="fill" />{/if}{copied === "sample" ? "Copied" : "Copy"}
             </button>
         </article>
 
@@ -91,7 +92,7 @@
                 <p class="mt-4 text-xs leading-6 text-[var(--muted)]"><strong class="text-[var(--ink)] font-medium">{selected.file}</strong> — {selected.hint}</p>
                 <pre class="my-4 overflow-x-auto bg-[color-mix(in_srgb,var(--ink)_3%,transparent)] p-3 text-xs leading-5 whitespace-pre-wrap text-[var(--muted)] break-words">{selected.code}</pre>
                 <button class="flex cursor-pointer items-center gap-2 border border-[var(--line)] bg-transparent px-3 py-2 text-xs font-medium uppercase text-[var(--ink)]" onclick={() => copy(selected.id, selected.code)}>
-                    <HugeiconsIcon icon={copied === selected.id ? Tick02Icon : Copy01Icon} size={14} strokeWidth={1.7} />{copied === selected.id ? "Copied" : `Copy ${selected.label}`}
+                    {#if copied === selected.id}<Check size={14} weight="fill" />{:else}<Copy size={14} weight="fill" />{/if}{copied === selected.id ? "Copied" : `Copy ${selected.label}`}
                 </button>
             {/if}
         </section>

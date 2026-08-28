@@ -1,59 +1,69 @@
 <script lang="ts">
-    import { HugeiconsIcon } from "@hugeicons/svelte";
-    import { Moon01Icon, Sun01Icon } from "@hugeicons/core-free-icons";
+    import GithubLogo from "phosphor-svelte/lib/GithubLogo";
+    import Moon from "phosphor-svelte/lib/Moon";
+    import Sun from "phosphor-svelte/lib/Sun";
     import type { PageProps } from "./$types";
+    import PulseMark from "$lib/components/PulseMark.svelte";
     import { appearance } from "$lib/appearance.svelte";
     import { resolve } from "$app/paths";
 
     let { data }: PageProps = $props();
 
     const githubUrl = "https://github.com/Vic-Orlands/pulse-analytics";
+    const portfolioUrl = "https://mezie.dev";
+    const email = "chimezieinnocent39@gmail.com";
     const ownerLabel = $derived(data.signedIn ? "Dashboard" : "Log in");
 </script>
 
 <svelte:head>
-    <title>Pulse</title>
-    <meta name="description" content="Private cookieless analytics." />
+    <title>Pulse — Private web analytics</title>
+    <meta
+        name="description"
+        content="Pulse is a personal, cookieless analytics dashboard for the sites you run on Cloudflare. No public signup."
+    />
 </svelte:head>
 
 <div class="home">
     <header class="top">
         <a class="brand" href={resolve("/")} aria-label="Pulse home">
-            <span class="pulse-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+            <PulseMark size={18} />
             Pulse
         </a>
         <nav aria-label="Site">
-            <a class="ghost" href={githubUrl} target="_blank" rel="noreferrer">
-                <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
-                    <path
-                        fill="currentColor"
-                        d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82A7.68 7.68 0 0 1 8 4.77c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"
-                    />
-                </svg>
-                GitHub
+            <a class="icon-btn" href={githubUrl} target="_blank" rel="noreferrer" aria-label="GitHub">
+                <GithubLogo size={18} weight="fill" />
             </a>
-            <a class="login" href={resolve(data.signedIn ? "/dashboard" : "/login")}>{ownerLabel}</a>
-            <button type="button" class="ghost icon" onclick={() => appearance.toggle()} aria-label="Toggle theme">
-                <HugeiconsIcon icon={appearance.id === "signal" ? Sun01Icon : Moon01Icon} size={16} strokeWidth={1.7} />
+            <button type="button" class="icon-btn" onclick={() => appearance.toggle()} aria-label="Toggle theme">
+                {#if appearance.id === "signal"}
+                    <Sun size={18} weight="fill" />
+                {:else}
+                    <Moon size={18} weight="fill" />
+                {/if}
             </button>
         </nav>
     </header>
 
     <section class="intro">
-        <p class="kicker">Analytics</p>
-        <h1>Private analytics</h1>
+        <h1>Privacy-first analytics for the sites you run</h1>
         <p class="lede">
-            Cookieless traffic on Cloudflare. No signup.
+            Pulse is a private, multi-site dashboard on Cloudflare Workers and Analytics Engine.
+            It measures visitors, views, sessions, and traffic sources without cookies or personal data.
+            This is a personal app: there is no public signup.
         </p>
+        <p class="note">Cookieless traffic on Cloudflare. No signup.</p>
         <div class="actions">
             <a class="login" href={resolve(data.signedIn ? "/dashboard" : "/login")}>{ownerLabel}</a>
-            <a class="ghost" href={githubUrl} target="_blank" rel="noreferrer">GitHub</a>
+            <a class="ghost" href={githubUrl} target="_blank" rel="noreferrer">View on GitHub</a>
         </div>
     </section>
 
     <section class="showcase" aria-labelledby="showcase-title">
-        <p class="kicker">Dashboard</p>
-        <h2 id="showcase-title">How it looks</h2>
+        <p class="kicker">Product insight</p>
+        <h2 id="showcase-title">Inside the Pulse dashboard</h2>
+        <p class="lede">
+            Compact Inter type, a quiet sidebar, and the analytics grid — the same surface used to
+            read live traffic.
+        </p>
         <figure class="panel stage">
             <video
                 src="/pulse-preview.mp4"
@@ -66,32 +76,28 @@
             >
                 Video not supported.
             </video>
+            <figcaption>Pulse dashboard walkthrough: sidebar, type scale, and analytics views.</figcaption>
         </figure>
     </section>
 
     <section class="about" aria-labelledby="about-title">
         <p class="kicker">About</p>
-        <h2 id="about-title">What it does</h2>
-        <ul>
-            <li>
-                <strong>No cookies.</strong>
-                Pages, referrers, countries, devices.
-            </li>
-            <li>
-                <strong>Your worker.</strong>
-                Tracker and dashboard on Cloudflare.
-            </li>
-            <li>
-                <strong>Owner only.</strong>
-                GitHub is public. The dashboard is not.
-            </li>
-        </ul>
+        <h2 id="about-title">What Pulse does</h2>
+        <p class="lede">
+            Pulse is a private analytics dashboard for the sites you run. A Cloudflare Worker serves
+            both the tracker and the dashboard, measuring visitors, views, sessions, pages, referrers,
+            countries, and devices without cookies or personal data. The first pageview creates an
+            app automatically.
+        </p>
     </section>
 
     <footer>
         <span>MIT · Pulse Analytics</span>
-        <a href={githubUrl} target="_blank" rel="noreferrer">GitHub</a>
-        <a href={resolve("/login")}>Log in</a>
+        <a class="icon-btn" href={githubUrl} target="_blank" rel="noreferrer" aria-label="GitHub">
+            <GithubLogo size={16} weight="fill" />
+        </a>
+        <a href={`mailto:${email}`}>{email}</a>
+        <a href={portfolioUrl} target="_blank" rel="noreferrer">mezie.dev</a>
     </footer>
 </div>
 
@@ -120,6 +126,7 @@
     }
 
     .brand {
+        gap: 8px;
         color: var(--ink);
         font-weight: 500;
         text-decoration: none;
@@ -128,18 +135,34 @@
     nav {
         flex-wrap: wrap;
         justify-content: flex-end;
+        gap: 4px;
+    }
+
+    .icon-btn {
+        display: inline-flex;
+        width: 32px;
+        height: 32px;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        border: 0;
+        border-radius: 8px;
+        color: var(--ink);
+        background: transparent;
+        cursor: pointer;
+        text-decoration: none;
     }
 
     .ghost,
     .login,
-    footer a {
+    footer a:not(.icon-btn) {
         display: inline-flex;
         min-height: 36px;
         align-items: center;
         justify-content: center;
         gap: 8px;
         padding: 0 12px;
-        border-radius: 10px;
+        border-radius: 8px;
         font-size: 13px;
         font-weight: 500;
         text-decoration: none;
@@ -150,11 +173,6 @@
         background: transparent;
         border: 1px solid var(--line);
         cursor: pointer;
-    }
-
-    .ghost.icon {
-        width: 36px;
-        padding: 0;
     }
 
     .login {
@@ -181,7 +199,8 @@
     }
 
     .lede,
-    .about li {
+    .note,
+    figcaption {
         max-width: 38rem;
         color: var(--muted);
         font-size: 14px;
@@ -189,6 +208,10 @@
     }
 
     .lede {
+        margin: 0 0 16px;
+    }
+
+    .note {
         margin: 0 0 20px;
     }
 
@@ -204,31 +227,13 @@
     video {
         display: block;
         width: 100%;
-        border-radius: 12px;
+        border-radius: 8px;
         background: #121116;
     }
 
-    .about ul {
-        display: grid;
-        gap: 14px;
-        margin: 0;
-        padding: 0;
-        list-style: none;
-    }
-
-    .about li {
-        padding: 16px 18px;
-        border: 1px solid var(--line);
-        border-radius: var(--radius);
-        background: var(--panel);
-    }
-
-    .about strong {
-        display: block;
-        margin-bottom: 4px;
-        color: var(--ink);
-        font-size: 13px;
-        font-weight: 500;
+    figcaption {
+        margin: 10px 4px 2px;
+        font-size: 12px;
     }
 
     footer {
@@ -238,7 +243,7 @@
         font-size: 12px;
     }
 
-    footer a {
+    footer a:not(.icon-btn) {
         min-height: 28px;
         padding: 0;
         color: var(--ink);
