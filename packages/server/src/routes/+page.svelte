@@ -114,6 +114,43 @@
         </p>
     </section>
 
+    <section class="gallery" aria-label="Dashboard screenshots">
+        <div class="shots">
+            <div class="frame">
+                <img
+                    class="shot shot-on-light"
+                    src="/showcase/overview-dark.png"
+                    width="1917"
+                    height="1045"
+                    alt="Pulse dashboard traffic overview."
+                />
+                <img
+                    class="shot shot-on-dark"
+                    src="/showcase/overview-light.png"
+                    width="1920"
+                    height="1046"
+                    alt="Pulse dashboard traffic overview."
+                />
+            </div>
+            <div class="frame">
+                <img
+                    class="shot shot-on-light"
+                    src="/showcase/breakdown-dark.png"
+                    width="1910"
+                    height="1040"
+                    alt="Pulse dashboard audience breakdown."
+                />
+                <img
+                    class="shot shot-on-dark"
+                    src="/showcase/breakdown-light.png"
+                    width="1920"
+                    height="1046"
+                    alt="Pulse dashboard audience breakdown."
+                />
+            </div>
+        </div>
+    </section>
+
     <footer>
         <span>MIT · Pulse Analytics</span>
         <div class="footer-end">
@@ -215,7 +252,8 @@
 
     .intro,
     .showcase,
-    .about {
+    .about,
+    .gallery {
         margin-top: 48px;
     }
 
@@ -276,6 +314,37 @@
         display: block;
     }
 
+    .shots {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+
+    .frame {
+        min-width: 0;
+    }
+
+    .shot {
+        display: block;
+        width: 100%;
+        height: auto;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--paper);
+    }
+
+    .shot-on-dark {
+        display: none;
+    }
+
+    :global(html[data-theme="signal"]) .shot-on-light {
+        display: none;
+    }
+
+    :global(html[data-theme="signal"]) .shot-on-dark {
+        display: block;
+    }
+
     figcaption {
         margin: 10px 4px 2px;
         font-size: 12px;
@@ -309,7 +378,8 @@
 
         .intro,
         .showcase,
-        .about {
+        .about,
+        .gallery {
             margin-top: 36px;
         }
     }
