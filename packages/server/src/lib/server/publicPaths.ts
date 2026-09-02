@@ -11,7 +11,7 @@ const PUBLIC_EXACT = new Set([
     "/pulse-preview.mp4",
 ]);
 
-const PUBLIC_PREFIXES = ["/collect", "/cache", "/login"];
+const PUBLIC_PREFIXES = ["/collect", "/cache", "/login", "/showcase"];
 
 export function isPublicPath(pathname: string): boolean {
     const normalized = pathname.replace(/\/+$/, "") || "/";

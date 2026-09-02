@@ -1,4 +1,5 @@
 <script lang="ts">
+    import Envelope from "phosphor-svelte/lib/Envelope";
     import GithubLogo from "phosphor-svelte/lib/GithubLogo";
     import Moon from "phosphor-svelte/lib/Moon";
     import Sun from "phosphor-svelte/lib/Sun";
@@ -65,18 +66,37 @@
             read live traffic.
         </p>
         <figure class="panel stage">
-            <video
-                src="/pulse-preview.mp4"
-                controls
-                autoplay
-                muted
-                loop
-                playsinline
-                preload="metadata"
-            >
-                Video not supported.
-            </video>
-            <figcaption>Pulse dashboard walkthrough: sidebar, type scale, and analytics views.</figcaption>
+            <div class="shots">
+                <img
+                    class="shot shot-light"
+                    src="/showcase/overview-light.png"
+                    width="1920"
+                    height="1046"
+                    alt="Pulse dashboard in light mode: visitors, traffic over time, pages, and referrers."
+                />
+                <img
+                    class="shot shot-dark"
+                    src="/showcase/overview-dark.png"
+                    width="1917"
+                    height="1045"
+                    alt="Pulse dashboard in dark mode: visitors, traffic over time, pages, and referrers."
+                />
+                <img
+                    class="shot shot-light"
+                    src="/showcase/breakdown-light.png"
+                    width="1920"
+                    height="1046"
+                    alt="Pulse dashboard in light mode: countries, devices, entry pages, and journeys."
+                />
+                <img
+                    class="shot shot-dark"
+                    src="/showcase/breakdown-dark.png"
+                    width="1910"
+                    height="1040"
+                    alt="Pulse dashboard in dark mode: countries, devices, entry pages, and journeys."
+                />
+            </div>
+            <figcaption>Pulse dashboard in the current theme: traffic overview and audience breakdown.</figcaption>
         </figure>
     </section>
 
@@ -96,11 +116,15 @@
 
     <footer>
         <span>MIT · Pulse Analytics</span>
-        <a class="icon-btn" href={githubUrl} target="_blank" rel="noreferrer" aria-label="GitHub">
-            <GithubLogo size={16} weight="fill" />
-        </a>
-        <a href={`mailto:${email}`}>{email}</a>
-        <a href={portfolioUrl} target="_blank" rel="noreferrer">mezie.dev</a>
+        <div class="footer-end">
+            <a class="icon-btn" href={githubUrl} target="_blank" rel="noreferrer" aria-label="GitHub">
+                <GithubLogo size={16} weight="fill" />
+            </a>
+            <a class="icon-btn" href={`mailto:${email}`} aria-label="Email">
+                <Envelope size={16} weight="fill" />
+            </a>
+            <a href={portfolioUrl} target="_blank" rel="noreferrer">mezie.dev</a>
+        </div>
     </footer>
 </div>
 
@@ -227,11 +251,29 @@
         padding: 10px;
     }
 
-    video {
+    .shots {
+        display: grid;
+        gap: 10px;
+    }
+
+    .shot {
         display: block;
         width: 100%;
+        height: auto;
         border-radius: 8px;
-        background: #121116;
+        background: var(--paper);
+    }
+
+    .shot-dark {
+        display: none;
+    }
+
+    :global(html[data-theme="signal"]) .shot-light {
+        display: none;
+    }
+
+    :global(html[data-theme="signal"]) .shot-dark {
+        display: block;
     }
 
     figcaption {
@@ -241,9 +283,17 @@
 
     footer {
         flex-wrap: wrap;
+        justify-content: space-between;
         margin-top: 56px;
         color: var(--muted);
         font-size: 12px;
+    }
+
+    .footer-end {
+        display: flex;
+        margin-left: auto;
+        align-items: center;
+        gap: 4px;
     }
 
     footer a:not(.icon-btn) {
