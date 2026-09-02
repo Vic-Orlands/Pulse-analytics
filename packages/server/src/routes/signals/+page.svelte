@@ -72,10 +72,10 @@
             </div>
         </section>
 
-        <section class="filters" data-reveal>
+        <section class="filters panel" data-reveal>
             {#each ["screenshot", "copy", "scrape", "interaction", "outbound", "download"] as type (type)}
                 {@const typed = type as AnalyticsEvent["type"]}
-                <button class="panel" class:active={filter === typed} onclick={() => (filter = filter === typed ? "all" : typed)} aria-pressed={filter === typed}>
+                <button class:active={filter === typed} onclick={() => (filter = filter === typed ? "all" : typed)} aria-pressed={filter === typed}>
                     <i data-type={typed}></i>
                     <span class="kicker">{names[typed]}</span>
                     <strong>{data.events.filter((event) => event.type === typed).reduce((sum, event) => sum + event.count, 0)}</strong>
@@ -143,9 +143,10 @@
     .hero p { max-width: 520px; margin: 0; color: var(--muted); }
     .total { display: grid; justify-items: end; gap: 6px; }
     .total strong { font-size: var(--text-lg); font-weight: 500; letter-spacing: -0.02em; }
-    .filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-    .filters button { display: grid; min-height: 112px; align-content: start; padding: 16px; border: 1px solid var(--line); color: inherit; background: var(--panel); text-align: left; cursor: pointer; }
-    .filters button.active, .filters button:hover { border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); background: color-mix(in srgb, var(--accent) 6%, var(--panel)); }
+    .filters { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0; overflow-x: auto; }
+    .filters button { display: grid; min-width: 0; min-height: 112px; align-content: start; padding: 16px; border: 0; border-right: 1px solid var(--line); border-radius: 0; color: inherit; background: transparent; text-align: left; cursor: pointer; }
+    .filters button:last-child { border-right: 0; }
+    .filters button.active, .filters button:hover { background: color-mix(in srgb, var(--accent) 6%, var(--panel)); }
     .filters i, .classification i { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
     i[data-type="copy"] { background: var(--comparison); }
     i[data-type="scrape"] { background: var(--warn); }
@@ -175,7 +176,7 @@
     .empty p { max-width: 460px; margin: 0; color: var(--muted); }
     [data-reveal] { opacity: 0; }
     @media (max-width: 900px) {
-        .filters { grid-template-columns: 1fr 1fr; }
+        .filters { grid-template-columns: repeat(6, minmax(140px, 1fr)); }
         .hero { flex-direction: column; align-items: start; }
         .total { justify-items: start; }
         .table-head { display: none; }
@@ -183,7 +184,6 @@
         .payload, .page { grid-column: 1 / -1; }
     }
     @media (max-width: 620px) {
-        .filters { grid-template-columns: 1fr; }
         .rows > button { grid-template-columns: 1fr; }
     }
     @media (prefers-reduced-motion: reduce) {
