@@ -66,37 +66,18 @@
             read live traffic.
         </p>
         <figure class="panel stage">
-            <div class="shots">
-                <img
-                    class="shot shot-light"
-                    src="/showcase/overview-light.png"
-                    width="1920"
-                    height="1046"
-                    alt="Pulse dashboard in light mode: visitors, traffic over time, pages, and referrers."
-                />
-                <img
-                    class="shot shot-dark"
-                    src="/showcase/overview-dark.png"
-                    width="1917"
-                    height="1045"
-                    alt="Pulse dashboard in dark mode: visitors, traffic over time, pages, and referrers."
-                />
-                <img
-                    class="shot shot-light"
-                    src="/showcase/breakdown-light.png"
-                    width="1920"
-                    height="1046"
-                    alt="Pulse dashboard in light mode: countries, devices, entry pages, and journeys."
-                />
-                <img
-                    class="shot shot-dark"
-                    src="/showcase/breakdown-dark.png"
-                    width="1910"
-                    height="1040"
-                    alt="Pulse dashboard in dark mode: countries, devices, entry pages, and journeys."
-                />
-            </div>
-            <figcaption>Pulse dashboard in the current theme: traffic overview and audience breakdown.</figcaption>
+            <video
+                src="/pulse-preview.mp4"
+                controls
+                autoplay
+                muted
+                loop
+                playsinline
+                preload="metadata"
+            >
+                Video not supported.
+            </video>
+            <figcaption>Pulse dashboard walkthrough: sidebar, type scale, and analytics views.</figcaption>
         </figure>
     </section>
 
@@ -289,29 +270,11 @@
         padding: 10px;
     }
 
-    .shots {
-        display: grid;
-        gap: 10px;
-    }
-
-    .shot {
+    video {
         display: block;
         width: 100%;
-        height: auto;
         border-radius: 8px;
-        background: var(--paper);
-    }
-
-    .shot-dark {
-        display: none;
-    }
-
-    :global(html[data-theme="signal"]) .shot-light {
-        display: none;
-    }
-
-    :global(html[data-theme="signal"]) .shot-dark {
-        display: block;
+        background: #121116;
     }
 
     .shots {
