@@ -66,37 +66,18 @@
             read live traffic.
         </p>
         <figure class="panel stage">
-            <div class="shots">
-                <img
-                    class="shot shot-light"
-                    src="/showcase/overview-light.png"
-                    width="1920"
-                    height="1046"
-                    alt="Pulse dashboard in light mode: visitors, traffic over time, pages, and referrers."
-                />
-                <img
-                    class="shot shot-dark"
-                    src="/showcase/overview-dark.png"
-                    width="1917"
-                    height="1045"
-                    alt="Pulse dashboard in dark mode: visitors, traffic over time, pages, and referrers."
-                />
-                <img
-                    class="shot shot-light"
-                    src="/showcase/breakdown-light.png"
-                    width="1920"
-                    height="1046"
-                    alt="Pulse dashboard in light mode: countries, devices, entry pages, and journeys."
-                />
-                <img
-                    class="shot shot-dark"
-                    src="/showcase/breakdown-dark.png"
-                    width="1910"
-                    height="1040"
-                    alt="Pulse dashboard in dark mode: countries, devices, entry pages, and journeys."
-                />
-            </div>
-            <figcaption>Pulse dashboard in the current theme: traffic overview and audience breakdown.</figcaption>
+            <video
+                src="/pulse-preview.mp4"
+                controls
+                autoplay
+                muted
+                loop
+                playsinline
+                preload="metadata"
+            >
+                Video not supported.
+            </video>
+            <figcaption>Pulse dashboard walkthrough: sidebar, type scale, and analytics views.</figcaption>
         </figure>
     </section>
 
@@ -112,6 +93,43 @@
             When you add the tracker script to any of your application, be it React, Next, SvelteKit, etc, the first pageview creates an
             app inside Pulse's analytics dashboard automatically. You don't need to make any other changes to see your analytics funneled in.
         </p>
+    </section>
+
+    <section class="gallery" aria-label="Dashboard screenshots">
+        <div class="shots">
+            <div class="frame">
+                <img
+                    class="shot shot-on-light"
+                    src="/showcase/overview-dark.png"
+                    width="1917"
+                    height="1045"
+                    alt="Pulse dashboard traffic overview."
+                />
+                <img
+                    class="shot shot-on-dark"
+                    src="/showcase/overview-light.png"
+                    width="1920"
+                    height="1046"
+                    alt="Pulse dashboard traffic overview."
+                />
+            </div>
+            <div class="frame">
+                <img
+                    class="shot shot-on-light"
+                    src="/showcase/breakdown-dark.png"
+                    width="1910"
+                    height="1040"
+                    alt="Pulse dashboard audience breakdown."
+                />
+                <img
+                    class="shot shot-on-dark"
+                    src="/showcase/breakdown-light.png"
+                    width="1920"
+                    height="1046"
+                    alt="Pulse dashboard audience breakdown."
+                />
+            </div>
+        </div>
     </section>
 
     <footer>
@@ -215,7 +233,8 @@
 
     .intro,
     .showcase,
-    .about {
+    .about,
+    .gallery {
         margin-top: 48px;
     }
 
@@ -251,28 +270,41 @@
         padding: 10px;
     }
 
+    video {
+        display: block;
+        width: 100%;
+        border-radius: 8px;
+        background: #121116;
+    }
+
     .shots {
         display: grid;
-        gap: 10px;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+
+    .frame {
+        min-width: 0;
     }
 
     .shot {
         display: block;
         width: 100%;
         height: auto;
+        border: 1px solid var(--line);
         border-radius: 8px;
         background: var(--paper);
     }
 
-    .shot-dark {
+    .shot-on-dark {
         display: none;
     }
 
-    :global(html[data-theme="signal"]) .shot-light {
+    :global(html[data-theme="signal"]) .shot-on-light {
         display: none;
     }
 
-    :global(html[data-theme="signal"]) .shot-dark {
+    :global(html[data-theme="signal"]) .shot-on-dark {
         display: block;
     }
 
@@ -309,7 +341,8 @@
 
         .intro,
         .showcase,
-        .about {
+        .about,
+        .gallery {
             margin-top: 36px;
         }
     }
